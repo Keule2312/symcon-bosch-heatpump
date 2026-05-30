@@ -1,27 +1,16 @@
-<?php
-
-declare(strict_types=1);
-
-class BoschHeatpump extends IPSModuleStrict
 {
-    public function Create(): void
-    {
-        parent::Create();
-        $this->RegisterPropertyString('TopicPrefix', 'ems-esp');
-        $this->RegisterPropertyBoolean('EnableBoiler', true);
-        $this->RegisterPropertyBoolean('EnableThermostat', true);
-        $this->RegisterPropertyBoolean('EnableEnergy', true);
-        $this->RegisterPropertyBoolean('EnableDashboard', false);
-        $this->RegisterPropertyInteger('UpdateInterval', 0);
-    }
-
-    public function Destroy(): void
-    {
-        parent::Destroy();
-    }
-
-    public function ApplyChanges(): void
-    {
-        parent::ApplyChanges();
-    }
+    "id": "{A7F3B2C1-4D8E-4F9A-B0C2-D3E4F5A6B7C8}",
+    "name": "BoschHeatpump",
+    "type": 3,
+    "vendor": "",
+    "aliases": [],
+    "parentRequirements": [],
+    "childRequirements": [],
+    "implemented": [
+        "Create",
+        "Destroy",
+        "ApplyChanges"
+    ],
+    "prefix": "BHP",
+    "url": "https://github.com/Keule2312/symcon-bosch-heatpump"
 }
