@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-class BoschHeatpump extends IPSModule
+class BoschHeatpump extends IPSModuleStrict
 {
-    public function Create()
+    public function Create(): void
     {
         parent::Create();
         $this->RegisterPropertyString('TopicPrefix', 'ems-esp');
@@ -15,12 +15,12 @@ class BoschHeatpump extends IPSModule
         $this->RegisterPropertyInteger('UpdateInterval', 0);
     }
 
-    public function Destroy()
+    public function Destroy(): void
     {
         parent::Destroy();
     }
 
-    public function ApplyChanges()
+    public function ApplyChanges(): void
     {
         parent::ApplyChanges();
     }
