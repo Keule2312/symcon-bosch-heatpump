@@ -284,7 +284,7 @@ class BoschHeatpump extends IPSModule
         $this->RegisterPropertyBoolean('EnableThermostat', true);
         $this->RegisterPropertyBoolean('EnableEnergy', true);
         $this->RegisterPropertyInteger('UpdateInterval', 0);
-        $this->ConnectParent('{F7A0DD2E-7687-4B45-B8B2-69B44F8A18E8}');
+        $this->ConnectParent('{82E1EEC2-2CD1-CB3D-2B22-B2851CCB6B02}');
         $this->RegisterTimer('UpdateTimer', 0, 'BHP_RequestUpdate($_IPS[\'TARGET\']);');
     }
 
@@ -613,7 +613,7 @@ class BoschHeatpump extends IPSModule
         }
 
         // Dashboard HTML ausliefern
-        $html = __DIR__ . '/dashboard.html';
+        $html = __DIR__ . '/WebHook/dashboard.html';
         if (file_exists($html)) {
             header('Content-Type: text/html; charset=utf-8');
             // Instanz-ID in HTML einbetten
