@@ -1,0 +1,32 @@
+{
+    "modules": [
+        {
+            "id": "{A7F3B2C1-4D8E-4F9A-B0C2-D3E4F5A6B7C8}",
+            "name": "Bosch Wärmepumpe (EMS-ESP)",
+            "type": 3,
+            "vendor": "",
+            "author": "",
+            "url": "https://github.com/DEIN-GITHUB-NAME/symcon-bosch-heatpump",
+            "description": "Steuert Bosch/Buderus/Nefit Wärmepumpen über EMS-ESP Gateway via MQTT. Alle Entitäten, WebFront Dashboard, COP-Berechnung.",
+            "keywords": [
+                "Bosch",
+                "Buderus",
+                "Nefit",
+                "Wärmepumpe",
+                "EMS-ESP",
+                "MQTT",
+                "Heizung",
+                "Heatpump",
+                "bbqkees",
+                "CS800i",
+                "Logatherm",
+                "WLW"
+            ],
+            "aliases": [],
+            "prefix": "BHP",
+            "compatibility": {
+                "version": "6.0"
+            }
+        }
+    ]
+}

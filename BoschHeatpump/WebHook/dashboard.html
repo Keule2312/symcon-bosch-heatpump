@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bosch Wärmepumpe</title>
+<style>
+  :root {
+    --bg: #0f1117; --bg2: #1a1d27; --bg3: #222536;
+    --border: rgba(255,255,255,0.07);
+    --text: #e8eaf0; --text2: #8b90a7; --text3: #555a72;
+    --blue: #4d9de0; --blue-dim: rgba(77,157,224,0.12);
+    --teal: #2ec4b6; --teal-dim: rgba(46,196,182,0.12);
+    --amber: #f4a261; --amber-dim: rgba(244,162,97,0.12);
+    --red: #e76f51; --red-dim: rgba(231,111,81,0.12);
+    --green: #57cc99; --green-dim: rgba(87,204,153,0.12);
+    --purple: #9d4edd; --purple-dim: rgba(157,78,221,0.12);
+    --gray-dim: rgba(255,255,255,0.05);
+    --rad: 12px; --rad-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, 'Segoe UI', sans-serif; font-size: 14px; min-height: 100vh; }
+
+  header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; }
+  .logo { width: 32px; height: 32px; background: var(--blue-dim); border: 1px solid var(--blue); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .logo svg { width: 18px; height: 18px; stroke: var(--blue); fill: none; stroke-width: 1.5; }
+  header h1 { font-size: 16px; font-weight: 600; color: var(--text); }
+  header p  { font-size: 11px; color: var(--text2); margin-top: 1px; }
+  .status-pill { margin-left: auto; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .pill-standby { background: var(--gray-dim); border: 1px solid rgba(255,255,255,0.1); color: var(--text2); }
+  .pill-active  { background: var(--green-dim); border: 1px solid var(--green); color: var(--green); }
+  .last-update  { font-size: 10px; color: var(--text3); margin-left: 8px; }
+
+  main { padding: 16px 20px; max-width: 1100px; margin: 0 auto; }
+
+  /* KPI Zeile */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+  .kpi { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rad); padding: 14px 16px; position: relative; overflow: hidden; }
+  .kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .kpi.blue::before  { background: var(--blue); }
+  .kpi.teal::before  { background: var(--teal); }
+  .kpi.amber::before { background: var(--amber); }
+  .kpi.purple::before{ background: var(--purple); }
+  .kpi-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+  .kpi-val   { font-size: 26px; font-weight: 300; color: var(--text); line-height: 1; }
+  .kpi-val span { font-size: 14px; color: var(--text2); margin-left: 2px; }
+  .kpi-sub   { font-size: 11px; color: var(--text3); margin-top: 5px; }
+
+  /* Schema */
+  .schema-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rad); margin-bottom: 14px; overflow: hidden; }
+  .schema-header { padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .schema-header h2 { font-size: 13px; font-weight: 500; color: var(--text); }
+  .schema-header p  { font-size: 11px; color: var(--text2); margin-left: auto; }
+  .schema-body { padding: 0; }
+  .schema-body svg { display: block; width: 100%; }
+
+  /* Bottom Grid */
+  .bottom-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rad); padding: 14px 16px; }
+  .card-title { font-size: 10px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .card-title svg { width: 13px; height: 13px; stroke: var(--text2); fill: none; stroke-width: 1.5; }
+  .row  { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .row:last-child { border-bottom: none; }
+  .row-k { font-size: 12px; color: var(--text2); }
+  .row-v { font-size: 12px; font-weight: 500; color: var(--text); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 500; }
+  .b-teal   { background: var(--teal-dim);   border: 1px solid var(--teal);   color: var(--teal); }
+  .b-amber  { background: var(--amber-dim);  border: 1px solid var(--amber);  color: var(--amber); }
+  .b-blue   { background: var(--blue-dim);   border: 1px solid var(--blue);   color: var(--blue); }
+  .b-gray   { background: var(--gray-dim);   border: 1px solid rgba(255,255,255,0.1); color: var(--text2); }
+  .b-red    { background: var(--red-dim);    border: 1px solid var(--red);    color: var(--red); }
+  .b-green  { background: var(--green-dim);  border: 1px solid var(--green);  color: var(--green); }
+
+  /* Energie Bars */
+  .en-wrap { margin: 6px 0 4px; }
+  .en-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--text3); margin-bottom: 3px; }
+  .en-bg { background: rgba(255,255,255,0.05); border-radius: 3px; height: 5px; overflow: hidden; }
+  .en-fill { height: 100%; border-radius: 3px; transition: width .6s ease; }
+
+  /* Kältekreis Temps Grid */
+  .temp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+  .temp-chip { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--rad-sm); padding: 10px 12px; }
+  .temp-chip-label { font-size: 10px; color: var(--text3); margin-bottom: 3px; }
+  .temp-chip-val { font-size: 16px; font-weight: 400; color: var(--text); }
+  .temp-chip-val span { font-size: 11px; color: var(--text2); }
+  .temp-chip-sub { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+  /* Quick Controls */
+  .ctrl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .ctrl-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--rad); padding: 14px 16px; }
+  .ctrl-section { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+  .ctrl-btn { display: block; width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--rad-sm); color: var(--text); font-size: 13px; padding: 9px 14px; cursor: pointer; text-align: left; margin-bottom: 6px; transition: border-color .2s, background .2s; }
+  .ctrl-btn:last-child { margin-bottom: 0; }
+  .ctrl-btn:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); }
+  .ctrl-btn.active { border-color: var(--teal); background: var(--teal-dim); color: var(--teal); }
+  .ctrl-btn-icon { margin-right: 8px; font-size: 14px; }
+
+  /* Animations */
+  @keyframes flowR { from{stroke-dashoffset:20} to{stroke-dashoffset:0} }
+  @keyframes flowL { from{stroke-dashoffset:0}  to{stroke-dashoffset:20} }
+  @keyframes flowD { from{stroke-dashoffset:20} to{stroke-dashoffset:0} }
+  @keyframes flowU { from{stroke-dashoffset:0}  to{stroke-dashoffset:20} }
+  @keyframes spin   { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  @keyframes pulse  { 0%,100%{opacity:.5} 50%{opacity:1} }
+  .flow-r { stroke-dasharray:6 4; animation:flowR 1s linear infinite; }
+  .flow-l { stroke-dasharray:6 4; animation:flowL 1s linear infinite; }
+  .flow-u { stroke-dasharray:6 4; animation:flowU 1s linear infinite; }
+  .flow-d { stroke-dasharray:6 4; animation:flowD 1s linear infinite; }
+  .flow-idle { stroke-dasharray:3 6; opacity:.25; }
+  .comp-group { transform-origin: 340px 188px; animation: pulse 3s ease-in-out infinite; }
+
+  footer { text-align:center; padding: 20px; font-size: 11px; color: var(--text3); border-top: 1px solid var(--border); margin-top: 8px; }
+
+  @media(max-width:700px) {
+    .kpi-row { grid-template-columns: repeat(2,1fr); }
+    .bottom-grid { grid-template-columns: 1fr; }
+    .temp-grid { grid-template-columns: repeat(2,1fr); }
+    .ctrl-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 015 5v3a5 5 0 01-5 5 5 5 0 01-5-5V7a5 5 0 015-5z"/><path d="M7 20h10M12 15v5"/></svg>
+  </div>
+  <div>
+    <h1>Bosch Wärmepumpe</h1>
+    <p id="subtitle">EMS-ESP · MQTT · IP-Symcon</p>
+  </div>
+  <span class="status-pill pill-standby" id="status-pill">Standby</span>
+  <span class="last-update" id="last-update">Laden…</span>
+</header>
+
+<main>
+
+  <!-- KPI -->
+  <div class="kpi-row">
+    <div class="kpi blue">
+      <div class="kpi-label">Außentemperatur</div>
+      <div class="kpi-val" id="kpi-outdoor">–<span>°C</span></div>
+      <div class="kpi-sub" id="kpi-outdoor-sub">Gedämpft: –</div>
+    </div>
+    <div class="kpi teal">
+      <div class="kpi-label">Vorlauf / Rücklauf</div>
+      <div class="kpi-val" id="kpi-flow">–<span>°C</span></div>
+      <div class="kpi-sub" id="kpi-return-sub">Rücklauf: –</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-label">Warmwasser</div>
+      <div class="kpi-val" id="kpi-dhw">–<span>°C</span></div>
+      <div class="kpi-sub" id="kpi-dhw-sub">Soll: –</div>
+    </div>
+    <div class="kpi purple">
+      <div class="kpi-label">COP (berechnet)</div>
+      <div class="kpi-val" id="kpi-cop">–</div>
+      <div class="kpi-sub" id="kpi-cop-sub">Wärme ÷ Strom</div>
+    </div>
+  </div>
+
+  <!-- Anlagenschema -->
+  <div class="schema-card">
+    <div class="schema-header">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4d9de0" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      <h2>Anlagenschema</h2>
+      <p id="schema-status">Systemdruck: – bar</p>
+    </div>
+    <div class="schema-body">
+      <svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ah-blue"  viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#4d9de0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+          <marker id="ah-red"   viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#e76f51" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+          <marker id="ah-teal"  viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#2ec4b6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+          <marker id="ah-gray"  viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#555a72" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+        </defs>
+
+        <!-- Hintergrund Zonen -->
+        <rect x="10" y="10" width="210" height="380" rx="10" fill="#4d9de0" fill-opacity=".04" stroke="#4d9de0" stroke-opacity=".15" stroke-width="0.5"/>
+        <text x="20" y="28" font-size="10" fill="#4d9de0" font-family="system-ui" font-weight="500">Kältekreis</text>
+
+        <rect x="640" y="10" width="250" height="380" rx="10" fill="#e76f51" fill-opacity=".04" stroke="#e76f51" stroke-opacity=".15" stroke-width="0.5"/>
+        <text x="650" y="28" font-size="10" fill="#e76f51" font-family="system-ui" font-weight="500">Heizkreis</text>
+
+        <!-- WP Gehäuse -->
+        <rect x="310" y="40" width="220" height="320" rx="14" fill="#1a1d27" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+        <text x="420" y="64" font-size="12" fill="#8b90a7" font-family="system-ui" font-weight="500" text-anchor="middle">Wärmepumpe</text>
+
+        <!-- Verdampfer (links) -->
+        <rect x="22" y="50" width="150" height="70" rx="8" fill="#0f1117" stroke="#4d9de0" stroke-width="1"/>
+        <text x="97" y="76" font-size="11" fill="#4d9de0" font-family="system-ui" font-weight="500" text-anchor="middle">Verdampfer</text>
+        <text x="97" y="91" font-size="10" fill="#8b90a7" font-family="system-ui" text-anchor="middle">Außeneinheit</text>
+        <text x="97" y="108" font-size="9" fill="#555a72" font-family="system-ui" text-anchor="middle" id="s-tl2">TL2: – · TR4: –</text>
+
+        <!-- Lüfter -->
+        <circle cx="195" cy="85" r="22" fill="none" stroke="#4d9de0" stroke-opacity=".2" stroke-width="1"/>
+        <path d="M195 68Q206 76 195 85Q186 76 195 68Z" fill="#4d9de0" fill-opacity=".3"/>
+        <path d="M212 85Q204 97 195 85Q204 76 212 85Z" fill="#4d9de0" fill-opacity=".3"/>
+        <path d="M195 102Q184 93 195 85Q204 93 195 102Z" fill="#4d9de0" fill-opacity=".3"/>
+        <path d="M178 85Q186 73 195 85Q186 96 178 85Z" fill="#4d9de0" fill-opacity=".3"/>
+        <circle cx="195" cy="85" r="5" fill="#4d9de0"/>
+
+        <!-- Kondensator (im WP) -->
+        <rect x="322" y="80" width="80" height="44" rx="6" fill="#0f1117" stroke="#e76f51" stroke-opacity=".4" stroke-width="0.5"/>
+        <text x="362" y="98" font-size="9" fill="#e76f51" font-family="system-ui" text-anchor="middle" font-weight="500">Kondensator</text>
+        <text x="362" y="114" font-size="9" fill="#8b90a7" font-family="system-ui" text-anchor="middle" id="s-tc3">TC3: –</text>
+
+        <!-- Expansionsventil -->
+        <rect x="498" y="80" width="80" height="44" rx="6" fill="#0f1117" stroke="#f4a261" stroke-opacity=".4" stroke-width="0.5"/>
+        <text x="538" y="98" font-size="9" fill="#f4a261" font-family="system-ui" text-anchor="middle" font-weight="500">Expansion</text>
+        <text x="538" y="114" font-size="9" fill="#8b90a7" font-family="system-ui" text-anchor="middle" id="s-tr3">TR3: –</text>
+
+        <!-- Kompressor (Mitte) -->
+        <g class="comp-group">
+          <circle cx="420" cy="220" r="52" fill="#0f1117" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+          <circle cx="420" cy="220" r="36" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1" stroke-dasharray="5 3"/>
+          <circle cx="420" cy="220" r="14" fill="#222536"/>
+          <path d="M420 183Q434 198 420 220Q408 198 420 183Z" fill="#555a72" opacity=".7"/>
+          <path d="M453 237Q440 254 420 220Q440 208 453 237Z" fill="#555a72" opacity=".7"/>
+          <path d="M387 237Q400 222 420 220Q400 237 387 237Z" fill="#555a72" opacity=".7"/>
+        </g>
+        <text x="420" y="288" font-size="11" fill="#8b90a7" font-family="system-ui" font-weight="500" text-anchor="middle">Kompressor</text>
+        <text x="420" y="302" font-size="9" fill="#555a72" font-family="system-ui" text-anchor="middle" id="s-comp">TR1: – · 0 rpm · Standby</text>
+
+        <!-- 3-Wege-Ventil -->
+        <circle cx="420" cy="340" r="16" fill="#0f1117" stroke="#2ec4b6" stroke-opacity=".4" stroke-width="1"/>
+        <text x="420" y="337" font-size="8" fill="#2ec4b6" font-family="system-ui" text-anchor="middle">3WV</text>
+        <text x="420" y="348" font-size="7" fill="#555a72" font-family="system-ui" text-anchor="middle" id="s-3wv">Aus</text>
+
+        <!-- Hydraulische Weiche -->
+        <rect x="655" y="55" width="80" height="140" rx="8" fill="#0f1117" stroke="#e76f51" stroke-opacity=".5" stroke-width="1"/>
+        <text x="695" y="82" font-size="10" fill="#e76f51" font-family="system-ui" font-weight="500" text-anchor="middle">Hydr.</text>
+        <text x="695" y="96" font-size="10" fill="#e76f51" font-family="system-ui" font-weight="500" text-anchor="middle">Weiche</text>
+        <rect x="665" y="104" width="60" height="80" rx="4" fill="#e76f51" fill-opacity=".05"/>
+        <text x="695" y="124" font-size="9" fill="#8b90a7" font-family="system-ui" text-anchor="middle" id="s-vl">VL: –</text>
+        <text x="695" y="140" font-size="9" fill="#8b90a7" font-family="system-ui" text-anchor="middle" id="s-rl">RL: –</text>
+        <text x="695" y="164" font-size="9" fill="#555a72" font-family="system-ui" text-anchor="middle" id="s-pressure">– bar</text>
+
+        <!-- Heizkörper -->
+        <rect x="760" y="55" width="120" height="60" rx="6" fill="#0f1117" stroke="#e76f51" stroke-opacity=".3" stroke-width="0.5"/>
+        <text x="820" y="76" font-size="10" fill="#e76f51" font-family="system-ui" font-weight="500" text-anchor="middle">Heizkörper HK1</text>
+        <line x1="770" y1="88" x2="770" y2="104" stroke="#e76f51" stroke-opacity=".4" stroke-width="2"/>
+        <line x1="782" y1="88" x2="782" y2="104" stroke="#e76f51" stroke-opacity=".4" stroke-width="2"/>
+        <line x1="794" y1="88" x2="794" y2="104" stroke="#e76f51" stroke-opacity=".4" stroke-width="2"/>
+        <line x1="806" y1="88" x2="806" y2="104" stroke="#e76f51" stroke-opacity=".4" stroke-width="2"/>
+        <line x1="818" y1="88" x2="818" y2="104" stroke="#e76f51" stroke-opacity=".4" stroke-width="2"/>
+        <line x1="830" y1="88" x2="830" y2="104" stroke="#e76f51" stroke-opacity=".4" stroke-width="2"/>
+        <line x1="842" y1="88" x2="842" y2="104" stroke="#e76f51" stroke-opacity=".4" stroke-width="2"/>
+        <line x1="767" y1="88" x2="872" y2="88" stroke="#e76f51" stroke-opacity=".3" stroke-width="0.5"/>
+        <line x1="767" y1="104" x2="872" y2="104" stroke="#e76f51" stroke-opacity=".3" stroke-width="0.5"/>
+        <text x="820" y="108" font-size="8" fill="#555a72" font-family="system-ui" text-anchor="middle" id="s-hk1">Betriebsart: – · WP-Modus: –</text>
+
+        <!-- Thermostat -->
+        <rect x="755" y="160" width="120" height="55" rx="6" fill="#0f1117" stroke="#f4a261" stroke-opacity=".3" stroke-width="0.5"/>
+        <text x="815" y="180" font-size="10" fill="#f4a261" font-family="system-ui" font-weight="500" text-anchor="middle">Thermostat</text>
+        <text x="815" y="196" font-size="9" fill="#8b90a7" font-family="system-ui" text-anchor="middle" id="s-therm1">WWK: –</text>
+        <text x="815" y="208" font-size="9" fill="#555a72" font-family="system-ui" text-anchor="middle" id="s-therm2">Komfort: – · Eco: –</text>
+
+        <!-- Warmwasserspeicher -->
+        <rect x="652" y="240" width="96" height="130" rx="8" fill="#0f1117" stroke="#2ec4b6" stroke-opacity=".5" stroke-width="1"/>
+        <ellipse cx="700" cy="258" rx="42" ry="11" fill="#2ec4b6" fill-opacity=".15"/>
+        <rect x="658" y="258" width="84" height="94" fill="#0f1117"/>
+        <ellipse cx="700" cy="352" rx="42" ry="11" fill="#2ec4b6" fill-opacity=".25"/>
+        <ellipse cx="700" cy="320" rx="38" ry="9" fill="#2ec4b6" fill-opacity=".08"/>
+        <text x="700" y="285" font-size="10" fill="#2ec4b6" font-family="system-ui" font-weight="500" text-anchor="middle">Warmwasser</text>
+        <text x="700" y="302" font-size="9" fill="#8b90a7" font-family="system-ui" text-anchor="middle" id="s-dhw-int">–°C intern</text>
+        <text x="700" y="316" font-size="9" fill="#8b90a7" font-family="system-ui" text-anchor="middle" id="s-dhw-ext">–°C extern</text>
+        <text x="700" y="332" font-size="8" fill="#555a72" font-family="system-ui" text-anchor="middle" id="s-dhw-mode">Modus: –</text>
+        <text x="700" y="344" font-size="8" fill="#555a72" font-family="system-ui" text-anchor="middle" id="s-dhw-circ">Zirk.: –</text>
+
+        <!-- E-Heizstab -->
+        <rect x="760" y="248" width="100" height="40" rx="5" fill="#0f1117" stroke="#f4a261" stroke-opacity=".3" stroke-width="0.5"/>
+        <text x="810" y="264" font-size="9" fill="#f4a261" font-family="system-ui" font-weight="500" text-anchor="middle">E-Heizstab</text>
+        <text x="810" y="279" font-size="9" fill="#555a72" font-family="system-ui" text-anchor="middle" id="s-eheat">Limit: – · Modus: –</text>
+
+        <!-- Silentmodus & PV -->
+        <rect x="760" y="300" width="100" height="60" rx="5" fill="#0f1117" stroke="#9d4edd" stroke-opacity=".3" stroke-width="0.5"/>
+        <text x="810" y="318" font-size="9" fill="#9d4edd" font-family="system-ui" font-weight="500" text-anchor="middle">Steuerung</text>
+        <text x="810" y="332" font-size="9" fill="#555a72" font-family="system-ui" text-anchor="middle" id="s-silent">Silent: –</text>
+        <text x="810" y="346" font-size="9" fill="#555a72" font-family="system-ui" text-anchor="middle" id="s-pv">PV-Anhebung: –</text>
+        <text x="810" y="356" font-size="8" fill="#333" font-family="system-ui" text-anchor="middle" id="s-absent">Abwesend: –</text>
+
+        <!-- ═══ LEITUNGEN KÄLTEKREIS ═══ -->
+        <!-- Verdampfer → Kompressor (Kältemittel kalt, blau fließend) -->
+        <path id="pipe-verd-komp" d="M172 85 L290 85 L290 185 L368 185" fill="none" stroke="#4d9de0" stroke-width="1.5" class="flow-r" marker-end="url(#ah-blue)"/>
+        <text x="228" y="78" font-size="8" fill="#4d9de0" font-family="system-ui" text-anchor="middle" id="s-tr5">TC1: –</text>
+
+        <!-- Kompressor → Kondensator (heiß, rot) -->
+        <path d="M420 168 L420 124" fill="none" stroke="#e76f51" stroke-width="1.5" class="flow-u" marker-end="url(#ah-red)"/>
+
+        <!-- Kondensator → Expansion -->
+        <path d="M402 102 L498 102" fill="none" stroke="#e76f51" stroke-width="1.5" class="flow-r" marker-end="url(#ah-red)"/>
+
+        <!-- Expansion → Verdampfer (kalt, Niederdruckseite) -->
+        <path d="M538 124 L538 360 L97 360 L97 120" fill="none" stroke="#4d9de0" stroke-width="1.5" class="flow-u" marker-end="url(#ah-blue)"/>
+        <text x="310" y="374" font-size="8" fill="#4d9de0" font-family="system-ui" text-anchor="middle" id="s-tc0">TC0: – (Kältemittel Rücklauf)</text>
+
+        <!-- ═══ LEITUNGEN HEIZKREIS ═══ -->
+        <!-- Kondensator → Hydr. Weiche Vorlauf (Standby → grau gestrichelt) -->
+        <path id="pipe-heat-vl" d="M402 90 L610 90 L610 90 L655 90" fill="none" stroke="#e76f51" stroke-width="1.5" class="flow-idle" marker-end="url(#ah-gray)"/>
+        <text x="528" y="82" font-size="8" fill="#555a72" font-family="system-ui" text-anchor="middle" id="s-vl-label">VL: –</text>
+
+        <!-- Hydr. Weiche → Heizkörper -->
+        <path d="M735 80 L760 80" fill="none" stroke="#e76f51" stroke-width="1.5" class="flow-idle" marker-end="url(#ah-gray)"/>
+
+        <!-- Heizkörper → Thermostat RL -->
+        <path d="M820 115 L820 160" fill="none" stroke="#555a72" stroke-width="1.5" class="flow-idle" marker-end="url(#ah-gray)"/>
+
+        <!-- Hydr. Weiche → Kompressor RL -->
+        <path d="M655 160 L610 160 L610 250 L538 250" fill="none" stroke="#555a72" stroke-width="1.5" class="flow-idle" marker-end="url(#ah-gray)"/>
+        <text x="582" y="175" font-size="8" fill="#555a72" font-family="system-ui" text-anchor="middle" id="s-rl-label">RL: –</text>
+
+        <!-- ═══ LEITUNGEN WWK ═══ -->
+        <!-- Kompressor → 3-Wege-Ventil -->
+        <path d="M420 272 L420 324" fill="none" stroke="#2ec4b6" stroke-width="1.5" class="flow-idle" marker-end="url(#ah-gray)"/>
+
+        <!-- 3WV → Warmwasser -->
+        <path d="M436 340 L652 340 L652 310" fill="none" stroke="#2ec4b6" stroke-width="1.5" class="flow-idle" marker-end="url(#ah-gray)"/>
+
+        <!-- E-Heizstab Verbindung -->
+        <path d="M748 268 L760 268" fill="none" stroke="#f4a261" stroke-width="1" class="flow-idle" opacity=".4" marker-end="url(#ah-gray)"/>
+
+        <!-- ═══ LEGENDE ═══ -->
+        <rect x="22" y="300" width="270" height="50" rx="6" fill="rgba(255,255,255,.02)" stroke="rgba(255,255,255,.06)" stroke-width="0.5"/>
+        <line x1="32" y1="316" x2="58" y2="316" stroke="#4d9de0" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <text x="64" y="320" font-size="9" fill="#4d9de0" font-family="system-ui">Kältemittel (fließend)</text>
+        <line x1="32" y1="334" x2="58" y2="334" stroke="#555a72" stroke-width="1.5" stroke-dasharray="3 6" opacity=".4"/>
+        <text x="64" y="338" font-size="9" fill="#555a72" font-family="system-ui">Heiz-/WWK-Kreis (Standby)</text>
+        <line x1="158" y1="316" x2="184" y2="316" stroke="#e76f51" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <text x="190" y="320" font-size="9" fill="#e76f51" font-family="system-ui">Hochdruck (heiß)</text>
+        <line x1="158" y1="334" x2="184" y2="334" stroke="#2ec4b6" stroke-width="1.5" stroke-dasharray="3 6" opacity=".4"/>
+        <text x="190" y="338" font-size="9" fill="#2ec4b6" font-family="system-ui">Warmwasser</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Kältekreis Temperatures -->
+  <div class="temp-grid">
+    <div class="temp-chip"><div class="temp-chip-label">TC0 · Kältemittel Rücklauf</div><div class="temp-chip-val" id="tc-tc0">–<span>°C</span></div></div>
+    <div class="temp-chip"><div class="temp-chip-label">TC1 · Kältemittel Vorlauf</div><div class="temp-chip-val" id="tc-tc1">–<span>°C</span></div></div>
+    <div class="temp-chip"><div class="temp-chip-label">TC3 · Kondensator</div><div class="temp-chip-val" id="tc-tc3">–<span>°C</span></div></div>
+    <div class="temp-chip"><div class="temp-chip-label">TR1 · Kompressor</div><div class="temp-chip-val" id="tc-tr1">–<span>°C</span></div></div>
+    <div class="temp-chip"><div class="temp-chip-label">TR4 · Verdampfereingang</div><div class="temp-chip-val" id="tc-tr4">–<span>°C</span></div></div>
+    <div class="temp-chip"><div class="temp-chip-label">TR5 · Kompressoreingang</div><div class="temp-chip-val" id="tc-tr5">–<span>°C</span></div></div>
+    <div class="temp-chip"><div class="temp-chip-label">PL1 · Niederdruck</div><div class="temp-chip-val" id="tc-pl1">–<span>°C</span></div></div>
+    <div class="temp-chip"><div class="temp-chip-label">PH1 · Hochdruck</div><div class="temp-chip-val" id="tc-ph1">–<span>°C</span></div></div>
+  </div>
+
+  <!-- Bottom Cards -->
+  <div class="bottom-grid">
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Energiebilanz
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:3px">Wärmeabgabe gesamt</div>
+      <div class="en-wrap">
+        <div class="en-label"><span style="color:var(--teal)">Heizen</span><span id="en-heat-val">–</span></div>
+        <div class="en-bg"><div class="en-fill" id="en-heat-bar" style="width:0%;background:var(--teal)"></div></div>
+      </div>
+      <div class="en-wrap">
+        <div class="en-label"><span style="color:#57cc99">WWK</span><span id="en-dhw-val">–</span></div>
+        <div class="en-bg"><div class="en-fill" id="en-dhw-bar" style="width:0%;background:#57cc99"></div></div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin:8px 0 3px">Stromverbrauch</div>
+      <div class="en-wrap">
+        <div class="en-label"><span style="color:var(--red)">Kompressor</span><span id="en-comp-val">–</span></div>
+        <div class="en-bg"><div class="en-fill" id="en-comp-bar" style="width:0%;background:var(--red)"></div></div>
+      </div>
+      <div class="en-wrap">
+        <div class="en-label"><span style="color:#f4a261">E-Heizstab</span><span id="en-eheat-val">–</span></div>
+        <div class="en-bg"><div class="en-fill" id="en-eheat-bar" style="width:0%;background:#f4a261"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Betriebszeiten & Starts
+      </div>
+      <div class="row"><span class="row-k">WP gesamt</span><span class="row-v" id="rt-total">–</span></div>
+      <div class="row"><span class="row-k">Kompressor Heizen</span><span class="row-v" id="rt-heat">–</span></div>
+      <div class="row"><span class="row-k">WWK Kompressor</span><span class="row-v" id="rt-dhw">–</span></div>
+      <div class="row"><span class="row-k">Kompressor Starts</span><span class="row-v" id="rt-starts">–</span></div>
+      <div class="row"><span class="row-k">WWK Starts</span><span class="row-v" id="rt-dhw-starts">–</span></div>
+      <div class="row"><span class="row-k">Systemdruck</span><span class="row-v" id="rt-pressure">–</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M8 12h8M12 8v8"/></svg>
+        Schnellsteuerung
+      </div>
+      <div class="row"><span class="row-k">HK1 Betriebsart</span><span class="row-v" id="ctrl-hk1mode">–</span></div>
+      <div class="row"><span class="row-k">HK1 WP-Modus</span><span class="row-v" id="ctrl-hpmode">–</span></div>
+      <div class="row"><span class="row-k">WWK Betriebsart</span><span class="row-v" id="ctrl-wwkmode">–</span></div>
+      <div class="row"><span class="row-k">Silentmodus</span><span class="row-v" id="ctrl-silent">–</span></div>
+      <div class="row"><span class="row-k">Abwesend</span><span class="row-v" id="ctrl-absent">–</span></div>
+      <div class="row"><span class="row-k">Heizstab Limit</span><span class="row-v" id="ctrl-heatrod">–</span></div>
+    </div>
+  </div>
+
+</main>
+
+<footer>Bosch Wärmepumpe · IP-Symcon Modul · EMS-ESP Gateway · Letzte Aktualisierung: <span id="footer-time">–</span></footer>
+
+<script>
+// Daten von IPS via WebHook laden
+var IPS_ID = parseInt(location.pathname.split('/').pop()) || 0;
+var API    = '/api/';
+
+function fmt(v, unit, dec) {
+  if (v === null || v === undefined || v === '') return '–';
+  var n = parseFloat(v);
+  if (isNaN(n)) return v;
+  return n.toFixed(dec || 0) + (unit ? ' ' + unit : '');
+}
+
+function badge(val, map) {
+  var cls = map[val] || 'b-gray';
+  return '<span class="badge ' + cls + '">' + (val || '–') + '</span>';
+}
+
+function setEl(id, html) {
+  var el = document.getElementById(id);
+  if (el) el.innerHTML = html;
+}
+
+function loadData() {
+  // IPS JSON-API aufrufen – Variable-Werte per Ident lesen
+  // Das PHP-Modul stellt per WebHook einen JSON-Endpunkt bereit
+  fetch('/hook/BoschHeatpump/' + IPS_ID + '/data')
+    .then(function(r){ return r.json(); })
+    .then(function(d){ updateUI(d); })
+    .catch(function(){ setEl('last-update', 'Verbindungsfehler'); });
+}
+
+function updateUI(d) {
+  if (!d) return;
+
+  // Header
+  var active = d.B_HeizenAktiv || d.B_WarmwasserAktiv || d.B_KompressorAktiv;
+  var pill = document.getElementById('status-pill');
+  if (pill) {
+    pill.className = 'status-pill ' + (active ? 'pill-active' : 'pill-standby');
+    pill.textContent = active ? 'Aktiv' : 'Standby';
+  }
+  setEl('last-update', new Date().toLocaleTimeString('de-DE'));
+  setEl('footer-time', new Date().toLocaleString('de-DE'));
+
+  // KPIs
+  setEl('kpi-outdoor', fmt(d.B_Aussentemperatur, '', 1) + '<span>°C</span>');
+  setEl('kpi-outdoor-sub', 'Gedämpft: ' + fmt(d.T_GedaempfteAussen, '°C', 1));
+  setEl('kpi-flow', fmt(d.B_VorlaufAktuell, '', 1) + '<span>°C</span>');
+  setEl('kpi-return-sub', 'Rücklauf: ' + fmt(d.B_Ruecklauftemperatur, '°C', 1));
+  setEl('kpi-dhw', fmt(d.B_WWKInternTemp, '', 1) + '<span>°C</span>');
+  setEl('kpi-dhw-sub', 'Soll: ' + fmt(d.B_WWKGewaehltTemp, '°C', 0));
+  setEl('kpi-cop', fmt(d.B_COP, '', 2));
+  setEl('kpi-cop-sub', fmt(d.B_GesamtEnergie, 'kWh', 0) + ' ÷ ' + fmt(d.B_GesamtVerbrauch, 'kWh', 0));
+
+  // Schema Texte
+  setEl('schema-status', 'Systemdruck: ' + fmt(d.B_Systemdruck, 'bar', 1));
+  setEl('s-tl2', 'TL2: ' + fmt(d.B_TL2,'°C',1) + ' · TR4: ' + fmt(d.B_TR4,'°C',1));
+  setEl('s-tc3', 'TC3: ' + fmt(d.B_TC3,'°C',1));
+  setEl('s-tr3', 'TR3: ' + fmt(d.B_TR3,'°C',1));
+  setEl('s-comp', 'TR1: '+fmt(d.B_TR1,'°C',1)+' · '+fmt(d.B_Kompressordrehzahl,'rpm',0)+' · '+(d.B_KompressorAktiv?'Aktiv':'Standby'));
+  setEl('s-vl', 'VL: ' + fmt(d.B_VorlaufAktuell,'°C',1));
+  setEl('s-rl', 'RL: ' + fmt(d.B_Ruecklauftemperatur,'°C',1));
+  setEl('s-pressure', fmt(d.B_Systemdruck,'bar',1));
+  setEl('s-tc0', 'TC0: ' + fmt(d.B_TC0,'°C',1) + ' (Kältemittel Rücklauf)');
+  setEl('s-vl-label', 'VL: ' + fmt(d.B_VorlaufAktuell,'°C',1));
+  setEl('s-rl-label', 'RL: ' + fmt(d.B_Ruecklauftemperatur,'°C',1));
+  setEl('s-3wv', d.B_WWKDreiWegeAktiv ? 'Aktiv' : 'Aus');
+  setEl('s-dhw-int', fmt(d.B_WWKInternTemp,'°C',1) + ' intern');
+  setEl('s-dhw-ext', fmt(d.B_WWKExternTemp,'°C',1) + ' extern');
+  setEl('s-dhw-mode', 'Modus: ' + (d.T_WWKBetriebsart_str || '–'));
+  setEl('s-dhw-circ', 'Zirk.: ' + (d.B_WWKZirkModus_str || '–'));
+  setEl('s-hk1', 'Betriebsart: '+(d.T_HK1Betriebsart_str||'–')+' · WP-Modus: '+(d.T_HK1WPModus_str||'–'));
+  setEl('s-therm1', 'WWK: ' + (d.T_WWKBetriebsart_str||'–'));
+  setEl('s-therm2', 'Komfort: '+fmt(d.T_HK1Komforttemperatur,'°C',0)+' · Eco: '+fmt(d.T_HK1EcoTemp,'°C',0));
+  setEl('s-silent', 'Silent: ' + (d.B_Silentmodus_str||'–'));
+  setEl('s-pv', 'PV-Anhebung: ' + fmt(d.T_AnhebungHeizenPV,'K',0));
+  setEl('s-absent', 'Abwesend: ' + (d.T_Abwesend ? 'Ja' : 'Nein'));
+  setEl('s-eheat', 'Limit: '+(d.B_HeizstabLeistung_str||'–')+' · Modus: '+(d.B_ZusatzheizungsModus_str||'–'));
+  setEl('s-tr5', 'TC1: ' + fmt(d.B_TC1,'°C',1));
+
+  // Kältekreis Chips
+  setEl('tc-tc0', fmt(d.B_TC0,'',1)+'<span>°C</span>');
+  setEl('tc-tc1', fmt(d.B_TC1,'',1)+'<span>°C</span>');
+  setEl('tc-tc3', fmt(d.B_TC3,'',1)+'<span>°C</span>');
+  setEl('tc-tr1', fmt(d.B_TR1,'',1)+'<span>°C</span>');
+  setEl('tc-tr4', fmt(d.B_TR4,'',1)+'<span>°C</span>');
+  setEl('tc-tr5', fmt(d.B_TR5,'',1)+'<span>°C</span>');
+  setEl('tc-pl1', fmt(d.B_PL1,'',1)+'<span>°C</span>');
+  setEl('tc-ph1', fmt(d.B_PH1,'',1)+'<span>°C</span>');
+
+  // Energie Bars
+  var totalHeat  = (parseFloat(d.B_HeizenEnergie)||0) + (parseFloat(d.B_WWKEnergie)||0);
+  var totalElec  = parseFloat(d.B_GesamtVerbrauch)||0;
+  var heatPct    = totalHeat > 0 ? Math.round((parseFloat(d.B_HeizenEnergie)||0)/totalHeat*100) : 0;
+  var dhwPct     = totalHeat > 0 ? Math.round((parseFloat(d.B_WWKEnergie)||0)/totalHeat*100) : 0;
+  var compPct    = totalElec > 0 ? Math.round((parseFloat(d.B_VerbrauchKompressor)||0)/totalElec*100) : 0;
+  var eheatPct   = totalElec > 0 ? Math.round((parseFloat(d.B_VerbrauchEHeizer)||0)/totalElec*100) : 0;
+  setEl('en-heat-val',  fmt(d.B_HeizenEnergie,'kWh',0)+' ('+heatPct+'%)');
+  setEl('en-dhw-val',   fmt(d.B_WWKEnergie,'kWh',0)+' ('+dhwPct+'%)');
+  setEl('en-comp-val',  fmt(d.B_VerbrauchKompressor,'kWh',0)+' ('+compPct+'%)');
+  setEl('en-eheat-val', fmt(d.B_VerbrauchEHeizer,'kWh',0)+' ('+eheatPct+'%)');
+  var hb = document.getElementById('en-heat-bar');  if(hb) hb.style.width = heatPct+'%';
+  var db = document.getElementById('en-dhw-bar');   if(db) db.style.width = dhwPct+'%';
+  var cb = document.getElementById('en-comp-bar');  if(cb) cb.style.width = compPct+'%';
+  var eb = document.getElementById('en-eheat-bar'); if(eb) eb.style.width = Math.max(eheatPct,1)+'%';
+
+  // Betriebszeiten
+  setEl('rt-total',      fmt(d.B_WPGesamtbetriebszeit,'h',0));
+  setEl('rt-heat',       fmt(d.B_BetriebszeitKompHeizen,'h',0));
+  setEl('rt-dhw',        fmt(d.B_BetriebszeitKompWWK,'h',0));
+  setEl('rt-starts',     fmt(d.B_KompressorStarts,'',0));
+  setEl('rt-dhw-starts', fmt(d.B_WWKStartsWP,'',0));
+  setEl('rt-pressure',   fmt(d.B_Systemdruck,'bar',1));
+
+  // Steuerung
+  setEl('ctrl-hk1mode', badge(d.T_HK1Betriebsart_str, {Aus:'b-gray',Manuell:'b-amber',Auto:'b-teal'}));
+  setEl('ctrl-hpmode',  badge(d.T_HK1WPModus_str,     {Heizen:'b-red',Kühlen:'b-blue','Heizen & Kühlen':'b-purple'}));
+  setEl('ctrl-wwkmode', badge(d.T_WWKBetriebsart_str, {Aus:'b-gray','Eco+':'b-teal',Eco:'b-green',Komfort:'b-amber',Auto:'b-blue'}));
+  setEl('ctrl-silent',  badge(d.B_Silentmodus_str,    {Aus:'b-gray',Auto:'b-amber',An:'b-teal'}));
+  setEl('ctrl-absent',  d.T_Abwesend ? '<span class="badge b-amber">Ja</span>' : '<span class="badge b-gray">Nein</span>');
+  setEl('ctrl-heatrod', badge(d.B_HeizstabLeistung_str, {'0 kW':'b-gray','2 kW':'b-teal','3 kW':'b-blue','4 kW':'b-amber','6 kW':'b-red','9 kW':'b-red'}));
+
+  // Leitungen animieren wenn aktiv
+  var pipeVK = document.getElementById('pipe-verd-komp');
+  var pipeHL = document.getElementById('pipe-heat-vl');
+  if (pipeVK) pipeVK.className = d.B_KompressorAktiv ? 'flow-r' : 'flow-idle';
+  if (pipeHL) pipeHL.className = d.B_HeizenAktiv     ? 'flow-r' : 'flow-idle';
+}
+
+// Start
+loadData();
+setInterval(loadData, 30000);
+</script>
+</body>
+</html>
