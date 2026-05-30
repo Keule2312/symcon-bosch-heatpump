@@ -613,7 +613,7 @@ class BoschHeatpump extends IPSModule
         }
 
         // Dashboard HTML ausliefern
-        $html = __DIR__ . '/WebHook/dashboard.html';
+        $html = __DIR__ . '/dashboard.html';
         if (file_exists($html)) {
             header('Content-Type: text/html; charset=utf-8');
             // Instanz-ID in HTML einbetten
