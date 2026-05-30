@@ -9,8 +9,12 @@
     "implemented": [
         "Create",
         "Destroy",
-        "ApplyChanges"
+        "ApplyChanges",
+        "GetConfigurationForm",
+        "ReceiveData",
+        "RequestAction"
     ],
     "prefix": "BHP",
-    "url": "https://github.com/Keule2312/symcon-bosch-heatpump"
+    "url": "https://github.com/Keule2312/symcon-bosch-heatpump",
+    "isStrict": true
 }
