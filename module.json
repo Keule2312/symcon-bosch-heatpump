@@ -6,7 +6,7 @@
             "type": 3,
             "vendor": "",
             "author": "",
-            "url": "https://github.com/DEIN-GITHUB-NAME/symcon-bosch-heatpump",
+            "url": "https://github.com/Keule2312/symcon-bosch-heatpump",
             "description": "Steuert Bosch/Buderus/Nefit Wärmepumpen über EMS-ESP Gateway via MQTT. Alle Entitäten, WebFront Dashboard, COP-Berechnung.",
             "keywords": [
                 "Bosch",
