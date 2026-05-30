@@ -1,16 +1,12 @@
 {
     "id": "{B8C2F3A1-5D9E-4F0A-C1D2-E3F4A5B6C7D8}",
-    "author": "Dein Name",
-    "name": "Bosch Wärmepumpe",
-    "description": "Bosch / Buderus / Nefit Wärmepumpe über EMS-ESP Gateway",
-    "version": "1.0.0",
-    "build": 1,
-    "date": "2026-05-30",
+    "author": "Dami",
+    "name": "Bosch Waermepumpe",
+    "url": "https://github.com/Keule2312/symcon-bosch-heatpump",
     "compatibility": {
         "version": "6.0"
     },
-    "urls": {
-        "documentation": "https://github.com/DEIN-GITHUB-NAME/symcon-bosch-heatpump",
-        "support": "https://github.com/DEIN-GITHUB-NAME/symcon-bosch-heatpump/issues"
-    }
+    "version": "1.0",
+    "build": 1,
+    "date": 1748649600
 }
