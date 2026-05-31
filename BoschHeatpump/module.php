@@ -45,7 +45,7 @@ class BoschHeatpump extends IPSModuleStrict
         $this->RegisterWebHook();
     }
 
-    public function ReceiveData(string $JSONString): void
+    public function ReceiveData(string $JSONString): string
     {
         $data = json_decode($JSONString, true);
         if (!isset($data['Topic'], $data['Payload'])) return;
@@ -54,6 +54,7 @@ class BoschHeatpump extends IPSModuleStrict
         $prefix = $this->ReadPropertyString('TopicPrefix');
         if ($data['Topic'] === $prefix . '/boiler')     $this->ProcessData($payload, self::BOILER_ENTITIES);
         if ($data['Topic'] === $prefix . '/thermostat') $this->ProcessData($payload, self::THERMOSTAT_ENTITIES);
+        return '';
     }
 
     public function RequestAction(string $Ident, mixed $Value): void
