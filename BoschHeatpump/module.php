@@ -57,7 +57,7 @@ class BoschHeatpump extends IPSModuleStrict
         return '';
     }
 
-    public function RequestAction(string $Ident, string $Value): void
+    public function RequestAction(string $Ident, mixed $Value): void
     {
         $device = null;
         $emsKey = null;
@@ -69,8 +69,7 @@ class BoschHeatpump extends IPSModuleStrict
             $emsKey = self::THERMOSTAT_ENTITIES[$Ident][4];
         }
         if (!$device || !$emsKey) return;
-        $this->SendMQTT($device, $emsKey, $Value);
-        // IPSModuleStrict: SetValue statt SetValueX
+        $this->SendMQTT($device, $emsKey, (string) $Value);
         $this->SetValue($Ident, $Value);
     }
 
