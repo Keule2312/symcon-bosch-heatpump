@@ -48,9 +48,9 @@ class BoschHeatpump extends IPSModuleStrict
     public function ReceiveData(string $JSONString): string
     {
         $data = json_decode($JSONString, true);
-        if (!isset($data['Topic'], $data['Payload'])) return;
+        if (!isset($data['Topic'], $data['Payload'])) return '';
         $payload = json_decode($data['Payload'], true);
-        if (!is_array($payload)) return;
+        if (!is_array($payload)) return '';
         $prefix = $this->ReadPropertyString('TopicPrefix');
         if ($data['Topic'] === $prefix . '/boiler')     $this->ProcessData($payload, self::BOILER_ENTITIES);
         if ($data['Topic'] === $prefix . '/thermostat') $this->ProcessData($payload, self::THERMOSTAT_ENTITIES);
