@@ -249,7 +249,6 @@ class BoschHeatpump extends IPSModuleStrict
         $this->RegisterPropertyBoolean('EnableEnergy', true);
         $this->RegisterPropertyBoolean('EnableDashboard', false);
         $this->RegisterPropertyInteger('UpdateInterval', 0);
-        $this->ConnectParent('{82E1EEC2-2CD1-CB3D-2B22-B2851CCB6B02}');
         $this->RegisterTimer('UpdateTimer', 0, 'BHP_RequestUpdate($_IPS[\'TARGET\']);');
     }
 
@@ -263,7 +262,10 @@ class BoschHeatpump extends IPSModuleStrict
     {
         parent::Destroy();
     }
-
+    public function GetCompatibleParents(): array
+    {
+        return ['{82E1EEC2-2CD1-CB3D-2B22-B2851CCB6B02}'];
+    }
     /**
      * The content can be overwritten in order to transfer a self-created configuration page.
      *
