@@ -7,14 +7,7 @@
     "aliases": [],
     "parentRequirements": ["{7F7632D9-FA40-4F38-8DEA-C83CD4325A32}"],
     "childRequirements": [],
-    "implemented": [
-        "Create",
-        "Destroy",
-        "GetConfigurationForm",
-        "ApplyChanges",
-        "ReceiveData",
-        "RequestAction"
-    ],
+    "implemented": [],
     "prefix": "BHP",
     "isStrict": true
 }
