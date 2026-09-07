@@ -2,102 +2,9 @@
 
 declare(strict_types=1);
 
+// CLASS BoschHeatpump
 class BoschHeatpump extends IPSModuleStrict
 {
-    public function Create(): void
-    {
-        parent::Create();
-        $this->RegisterPropertyString('TopicPrefix', 'ems-esp');
-        $this->RegisterPropertyBoolean('EnableBoiler', true);
-        $this->RegisterPropertyBoolean('EnableThermostat', true);
-        $this->RegisterPropertyBoolean('EnableEnergy', true);
-        $this->RegisterPropertyBoolean('EnableDashboard', false);
-        $this->RegisterPropertyInteger('UpdateInterval', 0);
-        // IPSModuleStrict: Parent wird automatisch verbunden - kein ConnectParent nötig
-        $this->RegisterTimer('UpdateTimer', 0, 'BHP_RequestUpdate($_IPS[\'TARGET\']);');
-    }
-
-    public function Destroy(): void
-    {
-        parent::Destroy();
-    }
-
-    public function ApplyChanges(): void
-    {
-        parent::ApplyChanges();
-
-        $prefix = $this->ReadPropertyString('TopicPrefix');
-        $filters = [];
-        if ($this->ReadPropertyBoolean('EnableBoiler'))     $filters[] = preg_quote($prefix . '/boiler', '/');
-        if ($this->ReadPropertyBoolean('EnableThermostat')) $filters[] = preg_quote($prefix . '/thermostat', '/');
-        if (!empty($filters)) {
-            $this->SetReceiveDataFilter('/.*(' . implode('|', $filters) . ').*/');
-        }
-
-        $this->RegisterProfiles();
-
-        if ($this->ReadPropertyBoolean('EnableBoiler'))     $this->CreateAllVariables(self::BOILER_ENTITIES,     'Kessel und Waermepumpe');
-        if ($this->ReadPropertyBoolean('EnableThermostat')) $this->CreateAllVariables(self::THERMOSTAT_ENTITIES, 'Thermostat und Bedienung');
-
-        $interval = $this->ReadPropertyInteger('UpdateInterval');
-        $this->SetTimerInterval('UpdateTimer', $interval > 0 ? $interval * 1000 : 0);
-
-        $this->RegisterWebHook();
-    }
-
-    public function ReceiveData(string $JSONString): string
-    {
-        $data = json_decode($JSONString, true);
-        if (!isset($data['Topic'], $data['Payload'])) return '';
-        $payload = json_decode($data['Payload'], true);
-        if (!is_array($payload)) return '';
-        $prefix = $this->ReadPropertyString('TopicPrefix');
-        if ($data['Topic'] === $prefix . '/boiler')     $this->ProcessData($payload, self::BOILER_ENTITIES);
-        if ($data['Topic'] === $prefix . '/thermostat') $this->ProcessData($payload, self::THERMOSTAT_ENTITIES);
-        return '';
-    }
-
-    public function RequestAction(string $Ident, mixed $Value): void
-    {
-        $device = null;
-        $emsKey = null;
-        if (isset(self::BOILER_ENTITIES[$Ident]) && self::BOILER_ENTITIES[$Ident][3]) {
-            $device = 'boiler';
-            $emsKey = self::BOILER_ENTITIES[$Ident][4];
-        } elseif (isset(self::THERMOSTAT_ENTITIES[$Ident]) && self::THERMOSTAT_ENTITIES[$Ident][3]) {
-            $device = 'thermostat';
-            $emsKey = self::THERMOSTAT_ENTITIES[$Ident][4];
-        }
-        if (!$device || !$emsKey) return;
-        $this->SendMQTT($device, $emsKey, (string) $Value);
-        $this->SetValue($Ident, $Value);
-    }
-
-    public function ProcessHookData(): void
-    {
-        $uri = $_SERVER['REQUEST_URI'] ?? '';
-        if (str_ends_with($uri, '/data')) {
-            header('Content-Type: application/json; charset=utf-8');
-            header('Access-Control-Allow-Origin: *');
-            echo json_encode($this->GetAllValues());
-            return;
-        }
-        $html = __DIR__ . '/dashboard.html';
-        if (file_exists($html)) {
-            header('Content-Type: text/html; charset=utf-8');
-            $content = file_get_contents($html);
-            $content = str_replace(
-                'var IPS_ID = parseInt(location.pathname.split(\'/\').pop()) || 0;',
-                'var IPS_ID = ' . $this->InstanceID . ';',
-                $content
-            );
-            echo $content;
-        } else {
-            http_response_code(404);
-            echo 'Dashboard nicht gefunden.';
-        }
-    }
-
     // =========================================================================
     // Boiler Entitaeten: Ident => [Name, Typ, Profil, Schreibbar, EMS-Key, Kategorie]
     // =========================================================================
@@ -191,7 +98,7 @@ class BoschHeatpump extends IPSModuleStrict
         'B_WWKDreiWegeAktiv'        => ['WWK 3-Wege-Ventil aktiv',              VARIABLETYPE_BOOLEAN, '~Switch',           false, 'wW3wayValve',         'Warmwasser'],
         'B_WWKAnzahlStarts'         => ['WWK Anzahl Starts',                    VARIABLETYPE_INTEGER, '',                  false, 'wWStarts',            'Warmwasser'],
         'B_WWKAktiveZeit'           => ['WWK aktive Zeit',                      VARIABLETYPE_FLOAT,   'BHP.Hours',         false, 'wWWorkM',             'Warmwasser'],
-        'B_WWKZirkPumpe'            => ['WWK Zirkulationspumpe vorhanden',      VARIABLETYPE_BOOLEAN, '~Switch',           true,  'wWCircPump',          'Warmwasser'],
+        'B_WWKZirkPumpe'            => ['WWK Zirkulationspumpe',                VARIABLETYPE_BOOLEAN, '~Switch',           true,  'wWCircPump',          'Warmwasser'],
         'B_WWKZirkAktiv'            => ['WWK Zirkulation aktiv',                VARIABLETYPE_BOOLEAN, '~Switch',           true,  'wWCirc',              'Warmwasser'],
         'B_WWKZirkModus'            => ['WWK Zirkulationspumpenmodus',          VARIABLETYPE_INTEGER, 'BHP.CircMode',      true,  'wWCircMode',          'Warmwasser'],
         'B_WWKWechselbetrieb'       => ['WWK Wechselbetrieb',                   VARIABLETYPE_BOOLEAN, '~Switch',           true,  'wWAltOp',             'Warmwasser'],
@@ -326,8 +233,156 @@ class BoschHeatpump extends IPSModuleStrict
         'T_WWKTaeglHeizzeit'        => ['WWK taegliche Heizzeit',              VARIABLETYPE_INTEGER, 'BHP.Minutes',       true,  'wwdailyheatingtime',  'WWKThermostat'],
     ];
 
+    /**
+     * In contrast to Construct, this function is called only once when creating the instance and starting IP-Symcon.
+     * Therefore, status variables and module properties which the module requires permanently should be created here.
+     *
+     * @return void
+     */
+    public function Create(): void
+    {
+        //Never delete this line!
+        parent::Create();
+        $this->RegisterPropertyString('TopicPrefix', 'ems-esp');
+        $this->RegisterPropertyBoolean('EnableBoiler', true);
+        $this->RegisterPropertyBoolean('EnableThermostat', true);
+        $this->RegisterPropertyBoolean('EnableEnergy', true);
+        $this->RegisterPropertyBoolean('EnableDashboard', false);
+        $this->RegisterPropertyInteger('UpdateInterval', 0);
+        $this->ConnectParent('{82E1EEC2-2CD1-CB3D-2B22-B2851CCB6B02}');
+        $this->RegisterTimer('UpdateTimer', 0, 'BHP_RequestUpdate($_IPS[\'TARGET\']);');
+    }
+
+    /**
+     * This function is called when deleting the instance during operation and when updating via "Module Control".
+     * The function is not called when exiting IP-Symcon.
+     *
+     * @return void
+     */
+    public function Destroy(): void
+    {
+        parent::Destroy();
+    }
+
+    /**
+     * The content can be overwritten in order to transfer a self-created configuration page.
+     *
+     * @return string Content of the configuration page.
+     */
+    public function GetConfigurationForm(): string
+    {
+        $form = json_decode(file_get_contents(__DIR__ . '/form.json'), true);
+        $this->SendDebug(__FUNCTION__, $form, 0);
+        return json_encode($form);
+    }
+
+    /**
+     * Is executed when "Apply" is pressed on the configuration page.
+     *
+     * @return void
+     */
+    public function ApplyChanges(): void
+    {
+        parent::ApplyChanges();
+
+        $prefix = $this->ReadPropertyString('TopicPrefix');
+        $filters = [];
+        if ($this->ReadPropertyBoolean('EnableBoiler'))     $filters[] = preg_quote($prefix . '/boiler', '/');
+        if ($this->ReadPropertyBoolean('EnableThermostat')) $filters[] = preg_quote($prefix . '/thermostat', '/');
+        if (!empty($filters)) {
+            $this->SetReceiveDataFilter('/.*(' . implode('|', $filters) . ').*/');
+        }
+
+        $this->RegisterProfiles();
+
+        if ($this->ReadPropertyBoolean('EnableBoiler'))     $this->CreateAllVariables(self::BOILER_ENTITIES,     'Kessel und Waermepumpe');
+        if ($this->ReadPropertyBoolean('EnableThermostat')) $this->CreateAllVariables(self::THERMOSTAT_ENTITIES, 'Thermostat und Bedienung');
+
+        $interval = $this->ReadPropertyInteger('UpdateInterval');
+        $this->SetTimerInterval('UpdateTimer', $interval > 0 ? $interval * 1000 : 0);
+
+        $this->SetStatus(102);
+    }
+
+    /**
+     * MQTT data received.
+     *
+     * @return string
+     */
+    public function ReceiveData(string $JSONString): string
+    {
+        $data = json_decode($JSONString, true);
+        if (!isset($data['Topic'], $data['Payload'])) return '';
+        $payload = json_decode($data['Payload'], true);
+        if (!is_array($payload)) return '';
+        $prefix = $this->ReadPropertyString('TopicPrefix');
+        if ($data['Topic'] === $prefix . '/boiler')     $this->ProcessData($payload, self::BOILER_ENTITIES);
+        if ($data['Topic'] === $prefix . '/thermostat') $this->ProcessData($payload, self::THERMOSTAT_ENTITIES);
+        return '';
+    }
+
+    /**
+     * Is called when a button is clicked in the visualization.
+     *
+     * @param string $ident Ident of the variable
+     * @param mixed $value The value to be set
+     *
+     * @return void
+     */
+    public function RequestAction(string $ident, mixed $value): void
+    {
+        $this->SendDebug(__FUNCTION__, $ident . ' => ' . $value, 0);
+
+        $device = null;
+        $emsKey = null;
+        if (isset(self::BOILER_ENTITIES[$ident]) && self::BOILER_ENTITIES[$ident][3]) {
+            $device = 'boiler';
+            $emsKey = self::BOILER_ENTITIES[$ident][4];
+        } elseif (isset(self::THERMOSTAT_ENTITIES[$ident]) && self::THERMOSTAT_ENTITIES[$ident][3]) {
+            $device = 'thermostat';
+            $emsKey = self::THERMOSTAT_ENTITIES[$ident][4];
+        }
+        if (!$device || !$emsKey) return;
+        $this->SendMQTT($device, $emsKey, $value);
+        $this->SetValue($ident, $value);
+    }
+
     // =========================================================================
-    // Private Methoden
+    // Public helper functions
+    // =========================================================================
+
+    public function SetupVariables(): void
+    {
+        $this->ApplyChanges();
+        $total = count(self::BOILER_ENTITIES) + count(self::THERMOSTAT_ENTITIES);
+        echo 'Variablen angelegt: ' . $total . "\n";
+    }
+
+    public function RequestUpdate(): void
+    {
+        $prefix = $this->ReadPropertyString('TopicPrefix');
+        foreach (['boiler', 'thermostat'] as $device) {
+            $this->SendDataToParent(json_encode([
+                'DataID'  => '{043EA491-0325-4ADD-8FC2-A30C8EEB4D3F}',
+                'Topic'   => $prefix . '/system/publish',
+                'Payload' => $device,
+                'QoS'     => 0,
+                'Retain'  => false,
+            ]));
+        }
+    }
+
+    public function DHWOneTimeCharge(): void  { $this->SendMQTT('boiler', 'wWOneTime', '1'); }
+    public function SetHK1Mode(int $mode): void { $this->SetValue('T_HK1Betriebsart', $mode); $this->SendMQTT('thermostat', 'hc1mode', (string)$mode); }
+    public function SetHPMode(int $mode): void  { $this->SetValue('T_HK1WPModus', $mode);    $this->SendMQTT('thermostat', 'hc1hpmode', (string)$mode); }
+    public function SetDHWMode(int $mode): void  { $this->SetValue('T_WWKBetriebsart', $mode); $this->SendMQTT('thermostat', 'wwmode', (string)$mode); }
+    public function SetSilentMode(int $mode): void { $this->SetValue('B_Silentmodus', $mode);  $this->SendMQTT('boiler', 'silentMode', (string)$mode); }
+    public function SetFlowTemp(float $temp): void { $this->SetValue('B_VorlaufGewaehlt', $temp); $this->SendMQTT('boiler', 'selflowtemp', (string)$temp); }
+    public function SetDHWTemp(float $temp): void  { $this->SetValue('B_WWKGewaehltTemp', $temp); $this->SendMQTT('boiler', 'wWSelTemp', (string)$temp); }
+    public function SetAbsent(bool $v): void { $this->SetValue('T_Abwesend', $v); $this->SendMQTT('thermostat', 'absent', $v ? '1' : '0'); }
+
+    // =========================================================================
+    // Private methods
     // =========================================================================
 
     private function ProcessData(array $payload, array $entities): void
@@ -340,11 +395,8 @@ class BoschHeatpump extends IPSModuleStrict
         }
         foreach ($payload as $key => $value) {
             $ident = $keyMap[strtolower((string) $key)] ?? null;
-            if ($ident !== null) {
-                $varID = @$this->GetIDForIdent($ident);
-                if ($varID) {
-                    $this->SetVarValue($ident, $value, $entities[$ident][1]);
-                }
+            if ($ident !== null && @$this->GetIDForIdent($ident)) {
+                $this->SetVarValue($ident, $value, $entities[$ident][1]);
             }
         }
         if ($this->ReadPropertyBoolean('EnableEnergy')) {
@@ -381,14 +433,14 @@ class BoschHeatpump extends IPSModuleStrict
         $prefix  = $this->ReadPropertyString('TopicPrefix');
         $topic   = $prefix . '/' . $device . '/set';
         $payload = json_encode([$command => $value]);
-        $data    = json_encode([
+        $this->SendDataToParent(json_encode([
             'DataID'  => '{043EA491-0325-4ADD-8FC2-A30C8EEB4D3F}',
             'Topic'   => $topic,
             'Payload' => $payload,
             'QoS'     => 0,
             'Retain'  => false,
-        ]);
-        $this->SendDataToParent($data);
+        ]));
+        $this->SendDebug(__FUNCTION__, $topic . ' => ' . $payload, 0);
     }
 
     private function CalculateCOP(): void
@@ -397,9 +449,7 @@ class BoschHeatpump extends IPSModuleStrict
         $dhwID  = @$this->GetIDForIdent('B_WWKEnergie');
         $elecID = @$this->GetIDForIdent('B_GesamtVerbrauch');
         $copID  = @$this->GetIDForIdent('B_COP');
-        if (!$heatID || !$dhwID || !$elecID || !$copID) {
-            return;
-        }
+        if (!$heatID || !$dhwID || !$elecID || !$copID) return;
         $heat = GetValueFloat($heatID) + GetValueFloat($dhwID);
         $elec = GetValueFloat($elecID);
         if ($elec > 0) {
@@ -420,31 +470,17 @@ class BoschHeatpump extends IPSModuleStrict
         foreach ($entities as $ident => $def) {
             [$name, $type, $profile, $writable, $emsKey, $catName] = $def;
             $catID = $cats[$catName] ?? $deviceCatID;
-            $varID = @$this->GetIDForIdent($ident);
-            if (!$varID) {
-                // IPSModuleStrict: RegisterVariable* gibt bool zurück
+            if (!@$this->GetIDForIdent($ident)) {
                 switch ($type) {
-                    case VARIABLETYPE_BOOLEAN:
-                        $created = $this->RegisterVariableBoolean($ident, $name, $profile);
-                        break;
-                    case VARIABLETYPE_INTEGER:
-                        $created = $this->RegisterVariableInteger($ident, $name, $profile);
-                        break;
-                    case VARIABLETYPE_FLOAT:
-                        $created = $this->RegisterVariableFloat($ident, $name, $profile);
-                        break;
-                    default:
-                        $created = $this->RegisterVariableString($ident, $name, $profile);
-                        break;
+                    case VARIABLETYPE_BOOLEAN: $this->RegisterVariableBoolean($ident, $name, $profile, 0); break;
+                    case VARIABLETYPE_INTEGER: $this->RegisterVariableInteger($ident, $name, $profile, 0); break;
+                    case VARIABLETYPE_FLOAT:   $this->RegisterVariableFloat($ident, $name, $profile, 0);   break;
+                    default:                   $this->RegisterVariableString($ident, $name, $profile, 0);  break;
                 }
                 $varID = @$this->GetIDForIdent($ident);
-                if ($varID) {
-                    IPS_SetParent($varID, $catID);
-                }
+                if ($varID) IPS_SetParent($varID, $catID);
             }
-            if ($writable) {
-                $this->EnableAction($ident);
-            }
+            if ($writable) $this->EnableAction($ident);
         }
     }
 
@@ -460,63 +496,15 @@ class BoschHeatpump extends IPSModuleStrict
         return $id;
     }
 
-    private function GetAllValues(): array
-    {
-        $result      = [];
-        $allEntities = array_merge(self::BOILER_ENTITIES, self::THERMOSTAT_ENTITIES);
-        $enumMaps    = [
-            'B_Silentmodus'        => [0 => 'Aus', 1 => 'Auto', 2 => 'An'],
-            'B_HeizstabLeistung'   => [0 => '0 kW', 2 => '2 kW', 3 => '3 kW', 4 => '4 kW', 6 => '6 kW', 9 => '9 kW'],
-            'T_HK1Betriebsart'     => [0 => 'Aus', 1 => 'Manuell', 2 => 'Auto'],
-            'T_HK1WPModus'         => [0 => 'Heizen', 1 => 'Kuehlen', 2 => 'Heizen und Kuehlen'],
-            'T_WWKBetriebsart'     => [0 => 'Aus', 1 => 'EcoPlus', 2 => 'Eco', 3 => 'Komfort', 4 => 'Auto'],
-        ];
-        foreach ($allEntities as $ident => $def) {
-            $varID = @$this->GetIDForIdent($ident);
-            if (!$varID) {
-                continue;
-            }
-            $type = $def[1];
-            $val  = match ($type) {
-                VARIABLETYPE_BOOLEAN => GetValueBoolean($varID),
-                VARIABLETYPE_INTEGER => GetValueInteger($varID),
-                VARIABLETYPE_FLOAT   => GetValueFloat($varID),
-                default              => GetValueString($varID),
-            };
-            $result[$ident] = $val;
-            if (isset($enumMaps[$ident]) && $type === VARIABLETYPE_INTEGER) {
-                $result[$ident . '_str'] = $enumMaps[$ident][$val] ?? (string) $val;
-            }
-        }
-        return $result;
-    }
-
-    private function RegisterWebHook(): void
-    {
-        if (!$this->ReadPropertyBoolean('EnableDashboard')) {
-            return;
-        }
-        $this->RegisterHook('/hook/BoschHeatpump/' . $this->InstanceID);
-    }
-
-    // =========================================================================
-    // Variablenprofile
-    // =========================================================================
-
     private function RegisterProfiles(): void
     {
         $fp = function (string $n, int $t, string $ic, string $sfx, float $mn, float $mx, float $st, int $dg): void {
-            if (!IPS_VariableProfileExists($n)) {
-                IPS_CreateVariableProfile($n, $t);
-            }
+            if (!IPS_VariableProfileExists($n)) IPS_CreateVariableProfile($n, $t);
             IPS_SetVariableProfileIcon($n, $ic);
             IPS_SetVariableProfileText($n, '', $sfx);
             IPS_SetVariableProfileValues($n, $mn, $mx, $st);
-            if ($t === VARIABLETYPE_FLOAT) {
-                IPS_SetVariableProfileDigits($n, $dg);
-            }
+            if ($t === VARIABLETYPE_FLOAT) IPS_SetVariableProfileDigits($n, $dg);
         };
-
         $fp('BHP.Bar',     VARIABLETYPE_FLOAT,   'Gauge',       ' bar',   0, 6,      0.1,  1);
         $fp('BHP.kWh',     VARIABLETYPE_FLOAT,   'Electricity', ' kWh',   0, 999999, 0.1,  1);
         $fp('BHP.kW',      VARIABLETYPE_FLOAT,   'Electricity', ' kW',    0, 20,     0.1,  2);
@@ -531,103 +519,30 @@ class BoschHeatpump extends IPSModuleStrict
         $fp('BHP.lmin',    VARIABLETYPE_FLOAT,   'Drops',       ' l/min', 0, 100,    0.1,  1);
         $fp('BHP.Kmin',    VARIABLETYPE_INTEGER, 'Clock',       ' Kmin',  0, 1000,   10,   0);
 
-        $this->CreateEnumProfile('BHP.SilentMode',    VARIABLETYPE_INTEGER, [[0, 'Aus', '', 0x888888], [1, 'Auto', '', 0x0066CC], [2, 'An', '', 0x00AA44]]);
-        $this->CreateEnumProfile('BHP.PrimaryMode',   VARIABLETYPE_INTEGER, [[0, 'Auto', '', 0x0066CC], [1, 'Kontinuierlich', '', 0xFF6600]]);
-        $this->CreateEnumProfile('BHP.HeaterPower',   VARIABLETYPE_INTEGER, [[0, '0 kW', '', 0x888888], [2, '2 kW', '', 0xFFAA00], [3, '3 kW', '', 0xFF8800], [4, '4 kW', '', 0xFF6600], [6, '6 kW', '', 0xFF4400], [9, '9 kW', '', 0xFF0000]]);
-        $this->CreateEnumProfile('BHP.OperatingMode', VARIABLETYPE_INTEGER, [[0, 'Aus', '', 0x888888], [1, 'Manuell', '', 0xFF6600], [2, 'Auto', '', 0x00AA44]]);
-        $this->CreateEnumProfile('BHP.HPMode',        VARIABLETYPE_INTEGER, [[0, 'Heizen', '', 0xFF4400], [1, 'Kuehlen', '', 0x0066CC], [2, 'Heizen und Kuehlen', '', 0x9900CC]]);
-        $this->CreateEnumProfile('BHP.DHWMode',       VARIABLETYPE_INTEGER, [[0, 'Aus', '', 0x888888], [1, 'EcoPlus', '', 0x00CC66], [2, 'Eco', '', 0x00AA44], [3, 'Komfort', '', 0xFF6600], [4, 'Auto', '', 0x0066CC]]);
-        $this->CreateEnumProfile('BHP.CircMode',      VARIABLETYPE_INTEGER, [[0, 'Aus', '', 0x888888], [1, '1x3 min', '', 0xAACC00], [2, '2x3 min', '', 0x88CC00], [3, '3x3 min', '', 0x66BB00], [4, '4x3 min', '', 0x44AA00], [5, '5x3 min', '', 0x229900], [6, '6x3 min', '', 0x008800], [7, 'Kontinuierlich', '', 0xFF6600]]);
-        $this->CreateEnumProfile('BHP.CircModeTH',    VARIABLETYPE_INTEGER, [[0, 'Aus', '', 0x888888], [1, 'An', '', 0x00AA44], [2, 'Auto', '', 0x0066CC], [3, 'Eigenprog', '', 0xFF6600]]);
-        $this->CreateEnumProfile('BHP.AuxMode',       VARIABLETYPE_INTEGER, [[0, 'Eco', '', 0x00AA44], [1, 'Komfort', '', 0xFF6600]]);
-        $this->CreateEnumProfile('BHP.WWKComfort',    VARIABLETYPE_INTEGER, [[0, 'Eco', '', 0x00AA44], [1, 'Gehobener Komfort', '', 0xFF6600]]);
-        $this->CreateEnumProfile('BHP.Gebaeudetyp',   VARIABLETYPE_INTEGER, [[0, 'Leicht', '', 0x66AAFF], [1, 'Mittel', '', 0xFFAA00], [2, 'Schwer', '', 0xFF4400]]);
-        $this->CreateEnumProfile('BHP.Heizungstyp',   VARIABLETYPE_INTEGER, [[0, 'Aus', '', 0x888888], [1, 'Heizkoerper', '', 0xFF6600], [2, 'Konvektor', '', 0xFFAA00], [3, 'Fussboden', '', 0x00AA44]]);
-        $this->CreateEnumProfile('BHP.SommerModus',   VARIABLETYPE_INTEGER, [[0, 'Sommer', '', 0xFFDD00], [1, 'Auto', '', 0x0066CC], [2, 'Winter', '', 0x4488FF]]);
-        $this->CreateEnumProfile('BHP.Absenkmodus',   VARIABLETYPE_INTEGER, [[0, 'Aussen', '', 0x4488FF], [1, 'Raum', '', 0xFF6600], [2, 'Reduziert', '', 0x888888]]);
-        $this->CreateEnumProfile('BHP.Frostmodus',    VARIABLETYPE_INTEGER, [[0, 'Raum', '', 0xFF6600], [1, 'Aussen', '', 0x4488FF], [2, 'Raum und Aussen', '', 0x9900CC]]);
-        $this->CreateEnumProfile('BHP.Steuermodus',   VARIABLETYPE_INTEGER, [[0, 'Wetter kompensiert', '', 0x0066CC], [1, 'Basispunkt Aussentemp', '', 0xFF6600], [2, 'na', '', 0x888888], [3, 'Raum', '', 0x00AA44], [4, 'Leistung', '', 0xFFAA00], [5, 'Konstant', '', 0xFF4400]]);
-        $this->CreateEnumProfile('BHP.Programm',      VARIABLETYPE_INTEGER, [[0, 'Prog 1', '', 0x0066CC], [1, 'Prog 2', '', 0xFF6600]]);
-        $this->CreateEnumProfile('BHP.SchaltModus',   VARIABLETYPE_INTEGER, [[0, 'Level', '', 0x0066CC], [1, 'Absolut', '', 0xFF6600]]);
-        $this->CreateEnumProfile('BHP.Wochentag',     VARIABLETYPE_INTEGER, [[0, 'Mo', '', 0x0066CC], [1, 'Di', '', 0x0066CC], [2, 'Mi', '', 0x0066CC], [3, 'Do', '', 0x0066CC], [4, 'Fr', '', 0x0066CC], [5, 'Sa', '', 0xFF6600], [6, 'So', '', 0xFF4400], [7, 'Alle', '', 0x00AA44]]);
-    }
-
-    private function CreateEnumProfile(string $name, int $type, array $entries): void
-    {
-        if (!IPS_VariableProfileExists($name)) {
-            IPS_CreateVariableProfile($name, $type);
-        }
-        $existing = IPS_GetVariableProfile($name)['Associations'];
-        foreach ($existing as $a) {
-            IPS_SetVariableProfileAssociation($name, $a['Value'], '', '', -1);
-        }
-        foreach ($entries as [$val, $lbl, $ico, $col]) {
-            IPS_SetVariableProfileAssociation($name, $val, $lbl, $ico, $col);
-        }
-    }
-
-    // =========================================================================
-    // Oeffentliche Hilfsfunktionen
-    // =========================================================================
-
-    public function SetupVariables(): void
-    {
-        $this->ApplyChanges();
-        $total = count(self::BOILER_ENTITIES) + count(self::THERMOSTAT_ENTITIES);
-        echo 'Variablen angelegt: ' . $total . "\n";
-    }
-
-    public function RequestUpdate(): void
-    {
-        $prefix = $this->ReadPropertyString('TopicPrefix');
-        foreach (['boiler', 'thermostat'] as $device) {
-            $this->SendDataToParent(json_encode([
-                'DataID'  => '{043EA491-0325-4ADD-8FC2-A30C8EEB4D3F}',
-                'Topic'   => $prefix . '/system/publish',
-                'Payload' => $device,
-                'QoS'     => 0,
-                'Retain'  => false,
-            ]));
-        }
-    }
-
-    public function DHWOneTimeCharge(): void
-    {
-        $this->SendMQTT('boiler', 'wWOneTime', '1');
-    }
-
-    public function SetHK1Mode(int $mode): void
-    {
-        $this->RequestAction('T_HK1Betriebsart', (string) $mode);
-    }
-
-    public function SetHPMode(int $mode): void
-    {
-        $this->RequestAction('T_HK1WPModus', (string) $mode);
-    }
-
-    public function SetDHWMode(int $mode): void
-    {
-        $this->RequestAction('T_WWKBetriebsart', (string) $mode);
-    }
-
-    public function SetSilentMode(int $mode): void
-    {
-        $this->RequestAction('B_Silentmodus', (string) $mode);
-    }
-
-    public function SetFlowTemp(float $temp): void
-    {
-        $this->RequestAction('B_VorlaufGewaehlt', (string) $temp);
-    }
-
-    public function SetDHWTemp(float $temp): void
-    {
-        $this->RequestAction('B_WWKGewaehltTemp', (string) $temp);
-    }
-
-    public function SetAbsent(bool $v): void
-    {
-        $this->RequestAction('T_Abwesend', $v ? '1' : '0');
+        $ep = function(string $name, array $entries): void {
+            if (!IPS_VariableProfileExists($name)) IPS_CreateVariableProfile($name, VARIABLETYPE_INTEGER);
+            $existing = IPS_GetVariableProfile($name)['Associations'];
+            foreach ($existing as $a) IPS_SetVariableProfileAssociation($name, $a['Value'], '', '', -1);
+            foreach ($entries as [$val, $lbl, $col]) IPS_SetVariableProfileAssociation($name, $val, $lbl, '', $col);
+        };
+        $ep('BHP.SilentMode',    [[0,'Aus',0x888888],[1,'Auto',0x0066CC],[2,'An',0x00AA44]]);
+        $ep('BHP.PrimaryMode',   [[0,'Auto',0x0066CC],[1,'Kontinuierlich',0xFF6600]]);
+        $ep('BHP.HeaterPower',   [[0,'0 kW',0x888888],[2,'2 kW',0xFFAA00],[3,'3 kW',0xFF8800],[4,'4 kW',0xFF6600],[6,'6 kW',0xFF4400],[9,'9 kW',0xFF0000]]);
+        $ep('BHP.OperatingMode', [[0,'Aus',0x888888],[1,'Manuell',0xFF6600],[2,'Auto',0x00AA44]]);
+        $ep('BHP.HPMode',        [[0,'Heizen',0xFF4400],[1,'Kuehlen',0x0066CC],[2,'Heizen und Kuehlen',0x9900CC]]);
+        $ep('BHP.DHWMode',       [[0,'Aus',0x888888],[1,'EcoPlus',0x00CC66],[2,'Eco',0x00AA44],[3,'Komfort',0xFF6600],[4,'Auto',0x0066CC]]);
+        $ep('BHP.CircMode',      [[0,'Aus',0x888888],[1,'1x3 min',0xAACC00],[2,'2x3 min',0x88CC00],[3,'3x3 min',0x66BB00],[4,'4x3 min',0x44AA00],[5,'5x3 min',0x229900],[6,'6x3 min',0x008800],[7,'Kontinuierlich',0xFF6600]]);
+        $ep('BHP.CircModeTH',    [[0,'Aus',0x888888],[1,'An',0x00AA44],[2,'Auto',0x0066CC],[3,'Eigenprog',0xFF6600]]);
+        $ep('BHP.AuxMode',       [[0,'Eco',0x00AA44],[1,'Komfort',0xFF6600]]);
+        $ep('BHP.WWKComfort',    [[0,'Eco',0x00AA44],[1,'Gehobener Komfort',0xFF6600]]);
+        $ep('BHP.Gebaeudetyp',   [[0,'Leicht',0x66AAFF],[1,'Mittel',0xFFAA00],[2,'Schwer',0xFF4400]]);
+        $ep('BHP.Heizungstyp',   [[0,'Aus',0x888888],[1,'Heizkoerper',0xFF6600],[2,'Konvektor',0xFFAA00],[3,'Fussboden',0x00AA44]]);
+        $ep('BHP.SommerModus',   [[0,'Sommer',0xFFDD00],[1,'Auto',0x0066CC],[2,'Winter',0x4488FF]]);
+        $ep('BHP.Absenkmodus',   [[0,'Aussen',0x4488FF],[1,'Raum',0xFF6600],[2,'Reduziert',0x888888]]);
+        $ep('BHP.Frostmodus',    [[0,'Raum',0xFF6600],[1,'Aussen',0x4488FF],[2,'Raum und Aussen',0x9900CC]]);
+        $ep('BHP.Steuermodus',   [[0,'Wetter kompensiert',0x0066CC],[1,'Basispunkt Aussentemp',0xFF6600],[2,'na',0x888888],[3,'Raum',0x00AA44],[4,'Leistung',0xFFAA00],[5,'Konstant',0xFF4400]]);
+        $ep('BHP.Programm',      [[0,'Prog 1',0x0066CC],[1,'Prog 2',0xFF6600]]);
+        $ep('BHP.SchaltModus',   [[0,'Level',0x0066CC],[1,'Absolut',0xFF6600]]);
+        $ep('BHP.Wochentag',     [[0,'Mo',0x0066CC],[1,'Di',0x0066CC],[2,'Mi',0x0066CC],[3,'Do',0x0066CC],[4,'Fr',0x0066CC],[5,'Sa',0xFF6600],[6,'So',0xFF4400],[7,'Alle',0x00AA44]]);
     }
 }
