@@ -262,9 +262,9 @@ class BoschHeatpump extends IPSModuleStrict
     {
         parent::Destroy();
     }
-    public function GetCompatibleParents(): array
+    public function GetCompatibleParents(): string
     {
-        return ['{82E1EEC2-2CD1-CB3D-2B22-B2851CCB6B02}'];
+        return json_encode(['{82E1EEC2-2CD1-CB3D-2B22-B2851CCB6B02}']);
     }
     /**
      * The content can be overwritten in order to transfer a self-created configuration page.
