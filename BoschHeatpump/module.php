@@ -5,9 +5,6 @@ declare(strict_types=1);
 // CLASS BoschHeatpump
 class BoschHeatpump extends IPSModuleStrict
 {
-    // =========================================================================
-    // Boiler Entitaeten: Ident => [Name, Typ, Profil, Schreibbar, EMS-Key, Kategorie]
-    // =========================================================================
     const BOILER_ENTITIES = [
         'B_HeizenAbschalten'        => ['Heizen abschalten',                   VARIABLETYPE_BOOLEAN, '~Switch',           true,  'heatingoff',          'Status'],
         'B_HeizenAktiv'             => ['Heizen aktiv',                         VARIABLETYPE_BOOLEAN, '~Switch',           false, 'heatingactive',       'Status'],
@@ -107,20 +104,20 @@ class BoschHeatpump extends IPSModuleStrict
         'B_WWKKomfortModus'         => ['WWK Komfort Modus',                    VARIABLETYPE_INTEGER, 'BHP.WWKComfort',    true,  'wWComfort',           'Warmwasser'],
         'B_WWKAubheizVorlauf'       => ['WWK Anhebung Vorlauftemperatur',       VARIABLETYPE_FLOAT,   '~Temperature',      true,  'wWFlowTempBoost',     'Warmwasser'],
         'B_WWKEcoPlusAus'           => ['WWK ECO Plus Ausschalttemp',           VARIABLETYPE_FLOAT,   '~Temperature',      true,  'wWEcoOffTemp',        'Warmwasser'],
-        'B_WWKKomfortDiff'          => ['WWK Komfort Differenztemp',            VARIABLETYPE_FLOAT,   '~Temperature',    true,  'wWComfortDiff',       'Warmwasser'],
-        'B_WWKEcoDiff'              => ['WWK ECO Differenztemp',                VARIABLETYPE_FLOAT,   '~Temperature',    true,  'wWEcoDiff',           'Warmwasser'],
-        'B_WWKEcoPlusDiff'          => ['WWK ECO Plus Differenztemp',           VARIABLETYPE_FLOAT,   '~Temperature',    true,  'wWEcoEcoDiff',        'Warmwasser'],
+        'B_WWKKomfortDiff'          => ['WWK Komfort Differenztemp',            VARIABLETYPE_FLOAT,   '~Temperature',      true,  'wWComfortDiff',       'Warmwasser'],
+        'B_WWKEcoDiff'              => ['WWK ECO Differenztemp',                VARIABLETYPE_FLOAT,   '~Temperature',      true,  'wWEcoDiff',           'Warmwasser'],
+        'B_WWKEcoPlusDiff'          => ['WWK ECO Plus Differenztemp',           VARIABLETYPE_FLOAT,   '~Temperature',      true,  'wWEcoEcoDiff',        'Warmwasser'],
         'B_WWKKomfortStopp'         => ['WWK Komfort Stopptemp',                VARIABLETYPE_FLOAT,   '~Temperature',      true,  'wWComfortStopTemp',   'Warmwasser'],
         'B_WWKEcoStopp'             => ['WWK ECO Stopptemp',                    VARIABLETYPE_FLOAT,   '~Temperature',      true,  'wWEcoStopTemp',       'Warmwasser'],
         'B_WWKEcoPlusStopp'         => ['WWK ECO Plus Stopptemp',               VARIABLETYPE_FLOAT,   '~Temperature',      true,  'wWEcoEcoStopTemp',    'Warmwasser'],
-        'B_WWKEinschaltDiff'        => ['WWK Einschalttemperaturdifferenz',     VARIABLETYPE_FLOAT,   '~Temperature',    true,  'wWDeltaP1',           'Warmwasser'],
-        'B_WWKAusschaltDiff'        => ['WWK Ausschalttemperaturdifferenz',     VARIABLETYPE_FLOAT,   '~Temperature',    true,  'wWDeltaP2',           'Warmwasser'],
+        'B_WWKEinschaltDiff'        => ['WWK Einschalttemperaturdifferenz',     VARIABLETYPE_FLOAT,   '~Temperature',      true,  'wWDeltaP1',           'Warmwasser'],
+        'B_WWKAusschaltDiff'        => ['WWK Ausschalttemperaturdifferenz',     VARIABLETYPE_FLOAT,   '~Temperature',      true,  'wWDeltaP2',           'Warmwasser'],
         'B_WWKHeizstabLimit'        => ['WWK Heizstab Limit fuer WW',          VARIABLETYPE_INTEGER, 'BHP.HeaterPower',   true,  'wWMaxPower',          'Warmwasser'],
         'B_NurZusatzheizer'         => ['Nur Zusatzheizer',                     VARIABLETYPE_BOOLEAN, '~Switch',           true,  'auxHeaterOnly',       'Zusatzheizer'],
         'B_ZusatzheiterDeaktiv'     => ['Zusatzheizer deaktivieren',            VARIABLETYPE_BOOLEAN, '~Switch',           true,  'auxHeaterOff',        'Zusatzheizer'],
         'B_ZusatzVerzoegert'        => ['Zusatzheizer verzoegert',              VARIABLETYPE_INTEGER, 'BHP.Kmin',          true,  'auxDelayTime',        'Zusatzheizer'],
-        'B_ZusatzMaxGrenze'         => ['Zusatzheizer max Grenze',              VARIABLETYPE_FLOAT,   '~Temperature',    true,  'auxLimit',            'Zusatzheizer'],
-        'B_ZusatzGrenzeStart'       => ['Zusatzheizer Grenze Start',            VARIABLETYPE_FLOAT,   '~Temperature',    true,  'auxLimitStart',       'Zusatzheizer'],
+        'B_ZusatzMaxGrenze'         => ['Zusatzheizer max Grenze',              VARIABLETYPE_FLOAT,   '~Temperature',      true,  'auxLimit',            'Zusatzheizer'],
+        'B_ZusatzGrenzeStart'       => ['Zusatzheizer Grenze Start',            VARIABLETYPE_FLOAT,   '~Temperature',      true,  'auxLimitStart',       'Zusatzheizer'],
         'B_ZusatzheizungsModus'     => ['Zusatzheizungsmodus',                  VARIABLETYPE_INTEGER, 'BHP.AuxMode',       true,  'auxMode',             'Zusatzheizer'],
         'B_HeizstabKompressor'      => ['Heizstab Limit mit Kompressor',        VARIABLETYPE_INTEGER, 'BHP.HeaterPower',   true,  'heatLimitPower2',     'Zusatzheizer'],
         'B_HeizstabLeistung'        => ['Heizstab Limit Leistung',              VARIABLETYPE_INTEGER, 'BHP.HeaterPower',   true,  'heatLimitPower',      'Zusatzheizer'],
@@ -132,8 +129,8 @@ class BoschHeatpump extends IPSModuleStrict
         'B_SilentMinAussen'         => ['Minimale Aussentemp Silentmodus',     VARIABLETYPE_FLOAT,   '~Temperature',      true,  'silentModeMinExt',    'WPSteuerung'],
         'B_PrimaererWPModus'        => ['Primaerer WP Modus',                  VARIABLETYPE_INTEGER, 'BHP.PrimaryMode',   true,  'hpMode',              'WPSteuerung'],
         'B_KuehlenNurPV'            => ['Kuehlen nur mit PV',                  VARIABLETYPE_BOOLEAN, '~Switch',           true,  'pvCooling',           'WPSteuerung'],
-        'B_TempDiffHeizen'          => ['Tempdiff TC3 TC0 Heizen',             VARIABLETYPE_FLOAT,   '~Temperature',    true,  'hpTcDiffHeat',        'WPSteuerung'],
-        'B_TempDiffKuehlen'         => ['Tempdiff TC3 TC0 Kuehlen',            VARIABLETYPE_FLOAT,   '~Temperature',    true,  'hpTcDiffCool',        'WPSteuerung'],
+        'B_TempDiffHeizen'          => ['Tempdiff TC3 TC0 Heizen',             VARIABLETYPE_FLOAT,   '~Temperature',      true,  'hpTcDiffHeat',        'WPSteuerung'],
+        'B_TempDiffKuehlen'         => ['Tempdiff TC3 TC0 Kuehlen',            VARIABLETYPE_FLOAT,   '~Temperature',      true,  'hpTcDiffCool',        'WPSteuerung'],
         'B_VentilKuehlen'           => ['Ventil Pumpe fuer Kuehlen',           VARIABLETYPE_BOOLEAN, '~Switch',           true,  'coolValve',           'WPSteuerung'],
         'B_Heizband'                => ['Heizband',                             VARIABLETYPE_BOOLEAN, '~Switch',           true,  'heatCable',           'WPSteuerung'],
         'B_VC0Ventil'               => ['VC0 Ventil',                           VARIABLETYPE_BOOLEAN, '~Switch',           true,  'vc0Valve',            'WPSteuerung'],
@@ -157,12 +154,9 @@ class BoschHeatpump extends IPSModuleStrict
         'B_EinstellungEingang4'     => ['Einstellung Eingang 4',                VARIABLETYPE_STRING,  '',                  true,  'in4Set',              'Eingaenge'],
     ];
 
-    // =========================================================================
-    // Thermostat Entitaeten
-    // =========================================================================
     const THERMOSTAT_ENTITIES = [
         'T_DatumZeit'               => ['Datum Zeit',                           VARIABLETYPE_STRING,  '',                  true,  'datetime',            'System'],
-        'T_KorrekturInternTemp'     => ['Korrektur interne Temperatur',         VARIABLETYPE_FLOAT,   '~Temperature',    true,  'intTempcal',          'System'],
+        'T_KorrekturInternTemp'     => ['Korrektur interne Temperatur',         VARIABLETYPE_FLOAT,   '~Temperature',      true,  'intTempcal',          'System'],
         'T_Estrichtrocknung'        => ['Estrichtrocknung',                     VARIABLETYPE_STRING,  '',                  false, 'screedDrying',        'System'],
         'T_EstrichtrocknungTemp'    => ['Estrichtrocknungstemperatur',          VARIABLETYPE_FLOAT,   '~Temperature',      false, 'screedTemp',          'System'],
         'T_Gebaeudetyp'             => ['Gebaeudetyp',                          VARIABLETYPE_INTEGER, 'BHP.Gebaeudetyp',   true,  'building',            'System'],
@@ -173,8 +167,8 @@ class BoschHeatpump extends IPSModuleStrict
         'T_Abwesend'                => ['Abwesend',                             VARIABLETYPE_BOOLEAN, '~Switch',           true,  'absent',              'System'],
         'T_GedaempfteAussen'        => ['Gedaempfte Aussentemperatur',          VARIABLETYPE_FLOAT,   '~Temperature',      false, 'dampedoutdoortemp',   'System'],
         'T_WWAnhebungPV'            => ['WW Anhebung mit PV',                   VARIABLETYPE_BOOLEAN, '~Switch',           true,  'wwactivateheat',      'PVIntegration'],
-        'T_AnhebungHeizenPV'        => ['Anhebung Heizen mit PV',               VARIABLETYPE_FLOAT,   '~Temperature',    true,  'heatPvRaise',         'PVIntegration'],
-        'T_AbsenkungKuehlenPV'      => ['Absenkung Kuehlen mit PV',             VARIABLETYPE_FLOAT,   '~Temperature',    true,  'coolPvLower',         'PVIntegration'],
+        'T_AnhebungHeizenPV'        => ['Anhebung Heizen mit PV',               VARIABLETYPE_FLOAT,   '~Temperature',      true,  'heatPvRaise',         'PVIntegration'],
+        'T_AbsenkungKuehlenPV'      => ['Absenkung Kuehlen mit PV',             VARIABLETYPE_FLOAT,   '~Temperature',      true,  'coolPvLower',         'PVIntegration'],
         'T_HK1Betriebsart'          => ['HK1 Betriebsart',                      VARIABLETYPE_INTEGER, 'BHP.OperatingMode', true,  'hc1mode',             'HK1Grundeinstellungen'],
         'T_HK1WPModus'              => ['HK1 WP Modus',                         VARIABLETYPE_INTEGER, 'BHP.HPMode',        true,  'hc1hpmode',           'HK1Grundeinstellungen'],
         'T_HK1Modustyp'             => ['HK1 Modustyp',                         VARIABLETYPE_STRING,  '',                  false, 'hc1modeType',         'HK1Grundeinstellungen'],
@@ -189,20 +183,20 @@ class BoschHeatpump extends IPSModuleStrict
         'T_HK1Komforttemperatur'    => ['HK1 Komforttemperatur',                VARIABLETYPE_FLOAT,   '~Temperature',      true,  'hc1comforttemp',      'HK1Temperaturen'],
         'T_HK1Sommertemperatur'     => ['HK1 Sommertemperatur',                 VARIABLETYPE_FLOAT,   '~Temperature',      true,  'hc1summertemp',       'HK1Temperaturen'],
         'T_HK1Auslegungstemperatur' => ['HK1 Auslegungstemperatur',             VARIABLETYPE_FLOAT,   '~Temperature',      true,  'hc1designtemp',       'HK1Temperaturen'],
-        'T_HK1Temperaturanhebung'   => ['HK1 Temperaturanhebung',               VARIABLETYPE_FLOAT,   '~Temperature',    true,  'hc1tempadjust',       'HK1Temperaturen'],
+        'T_HK1Temperaturanhebung'   => ['HK1 Temperaturanhebung',               VARIABLETYPE_FLOAT,   '~Temperature',      true,  'hc1tempadjust',       'HK1Temperaturen'],
         'T_HK1MinVorlauf'           => ['HK1 min Vorlauftemperatur',            VARIABLETYPE_FLOAT,   '~Temperature',      true,  'hc1minflowtemp',      'HK1Temperaturen'],
         'T_HK1MaxVorlauf'           => ['HK1 max Vorlauftemperatur',            VARIABLETYPE_FLOAT,   '~Temperature',      true,  'hc1maxflowtemp',      'HK1Temperaturen'],
         'T_HK1BerechneteVorlauf'    => ['HK1 berechnete Vorlauftemperatur',     VARIABLETYPE_FLOAT,   '~Temperature',      false, 'hc1calcflowtemp',     'HK1Temperaturen'],
         'T_HK1TempSollAuto'         => ['HK1 Solltemperatur Automodus',         VARIABLETYPE_FLOAT,   '~Temperature',      true,  'hc1tempauto',         'HK1Temperaturen'],
         'T_HK1Kuehltemperatur'      => ['HK1 Kuehltemperatur',                  VARIABLETYPE_FLOAT,   '~Temperature',      true,  'hc1cooltemp',         'HK1Temperaturen'],
         'T_HK1WPMinVorlauf'         => ['HK1 WP minimale Vorlauftemperatur',    VARIABLETYPE_FLOAT,   '~Temperature',      true,  'hc1hpminflowtemp',    'HK1Temperaturen'],
-        'T_HK1Taupunktdiff'         => ['HK1 Taupunktdifferenz',                VARIABLETYPE_FLOAT,   '~Temperature',    true,  'hc1dewpoint',         'HK1Temperaturen'],
-        'T_HK1Raumtempdiff'         => ['HK1 Raumtemperaturdifferenz',          VARIABLETYPE_FLOAT,   '~Temperature',    true,  'hc1roomtempdiff',     'HK1Temperaturen'],
-        'T_HK1Solareinfluss'        => ['HK1 Solareinfluss',                    VARIABLETYPE_FLOAT,   '~Temperature',    true,  'hc1solarinfl',        'HK1Temperaturen'],
-        'T_HK1AktSolareinfluss'     => ['HK1 akt Solareinfluss',               VARIABLETYPE_FLOAT,   '~Temperature',    false, 'hc1actualsolarinfl',  'HK1Temperaturen'],
-        'T_HK1Raumeinfluss'         => ['HK1 Raumeinfluss',                     VARIABLETYPE_FLOAT,   '~Temperature',    true,  'hc1roomInfluence',    'HK1Raumeinfluss'],
+        'T_HK1Taupunktdiff'         => ['HK1 Taupunktdifferenz',                VARIABLETYPE_FLOAT,   '~Temperature',      true,  'hc1dewpoint',         'HK1Temperaturen'],
+        'T_HK1Raumtempdiff'         => ['HK1 Raumtemperaturdifferenz',          VARIABLETYPE_FLOAT,   '~Temperature',      true,  'hc1roomtempdiff',     'HK1Temperaturen'],
+        'T_HK1Solareinfluss'        => ['HK1 Solareinfluss',                    VARIABLETYPE_FLOAT,   '~Temperature',      true,  'hc1solarinfl',        'HK1Temperaturen'],
+        'T_HK1AktSolareinfluss'     => ['HK1 akt Solareinfluss',               VARIABLETYPE_FLOAT,   '~Temperature',      false, 'hc1actualsolarinfl',  'HK1Temperaturen'],
+        'T_HK1Raumeinfluss'         => ['HK1 Raumeinfluss',                     VARIABLETYPE_FLOAT,   '~Temperature',      true,  'hc1roomInfluence',    'HK1Raumeinfluss'],
         'T_HK1Raumeinflussfaktor'   => ['HK1 Raumeinflussfaktor',               VARIABLETYPE_INTEGER, '',                  true,  'hc1roomInfluenceFact','HK1Raumeinfluss'],
-        'T_HK1AktRaumeinfluss'      => ['HK1 aktueller Raumeinfluss',           VARIABLETYPE_FLOAT,   '~Temperature',    false, 'hc1currRoomInfluence','HK1Raumeinfluss'],
+        'T_HK1AktRaumeinfluss'      => ['HK1 aktueller Raumeinfluss',           VARIABLETYPE_FLOAT,   '~Temperature',      false, 'hc1currRoomInfluence','HK1Raumeinfluss'],
         'T_HK1RaumtempRemote'       => ['HK1 Raumtemperatur Remote',            VARIABLETYPE_FLOAT,   '~Temperature',      true,  'hc1remoteRoomTemp',   'HK1Raumeinfluss'],
         'T_HK1RaumfeuchteRemote'    => ['HK1 Raumfeuchte Remote',               VARIABLETYPE_INTEGER, 'BHP.Percent',       true,  'hc1remoteHumidity',   'HK1Raumeinfluss'],
         'T_HK1SommerEinstellung'    => ['HK1 Einstellung Sommerbetrieb',        VARIABLETYPE_INTEGER, 'BHP.SommerModus',   true,  'hc1summermode',       'HK1SommerWinter'],
@@ -233,15 +227,8 @@ class BoschHeatpump extends IPSModuleStrict
         'T_WWKTaeglHeizzeit'        => ['WWK taegliche Heizzeit',              VARIABLETYPE_INTEGER, 'BHP.Minutes',       true,  'wwdailyheatingtime',  'WWKThermostat'],
     ];
 
-    /**
-     * In contrast to Construct, this function is called only once when creating the instance and starting IP-Symcon.
-     * Therefore, status variables and module properties which the module requires permanently should be created here.
-     *
-     * @return void
-     */
     public function Create(): void
     {
-        //Never delete this line!
         parent::Create();
         $this->RegisterPropertyString('TopicPrefix', 'ems-esp');
         $this->RegisterPropertyBoolean('EnableBoiler', true);
@@ -252,37 +239,22 @@ class BoschHeatpump extends IPSModuleStrict
         $this->RegisterTimer('UpdateTimer', 0, 'BHP_RequestUpdate($_IPS[\'TARGET\']);');
     }
 
-    /**
-     * This function is called when deleting the instance during operation and when updating via "Module Control".
-     * The function is not called when exiting IP-Symcon.
-     *
-     * @return void
-     */
     public function Destroy(): void
     {
         parent::Destroy();
     }
+
     public function GetCompatibleParents(): string
     {
-        return json_encode(['{7F7632D9-FA40-4F38-8DEA-C83CD4325A32}']);
+        return json_encode(['{F7A0DD2E-7684-95C0-64C2-D2A9DC47577B}']);
     }
-    /**
-     * The content can be overwritten in order to transfer a self-created configuration page.
-     *
-     * @return string Content of the configuration page.
-     */
+
     public function GetConfigurationForm(): string
     {
         $form = json_decode(file_get_contents(__DIR__ . '/form.json'), true);
-        $this->SendDebug(__FUNCTION__, $form, 0);
         return json_encode($form);
     }
 
-    /**
-     * Is executed when "Apply" is pressed on the configuration page.
-     *
-     * @return void
-     */
     public function ApplyChanges(): void
     {
         parent::ApplyChanges();
@@ -306,11 +278,6 @@ class BoschHeatpump extends IPSModuleStrict
         $this->SetStatus(102);
     }
 
-    /**
-     * MQTT data received.
-     *
-     * @return string
-     */
     public function ReceiveData(string $JSONString): string
     {
         $data = json_decode($JSONString, true);
@@ -323,18 +290,8 @@ class BoschHeatpump extends IPSModuleStrict
         return '';
     }
 
-    /**
-     * Is called when a button is clicked in the visualization.
-     *
-     * @param string $ident Ident of the variable
-     * @param mixed $value The value to be set
-     *
-     * @return void
-     */
     public function RequestAction(string $ident, mixed $value): void
     {
-        $this->SendDebug(__FUNCTION__, $ident . ' => ' . $value, 0);
-
         $device = null;
         $emsKey = null;
         if (isset(self::BOILER_ENTITIES[$ident]) && self::BOILER_ENTITIES[$ident][3]) {
@@ -345,13 +302,9 @@ class BoschHeatpump extends IPSModuleStrict
             $emsKey = self::THERMOSTAT_ENTITIES[$ident][4];
         }
         if (!$device || !$emsKey) return;
-        $this->SendMQTT($device, $emsKey, $value);
+        $this->SendMQTT($device, $emsKey, (string) $value);
         $this->SetValue($ident, $value);
     }
-
-    // =========================================================================
-    // Public helper functions
-    // =========================================================================
 
     public function SetupVariables(): void
     {
@@ -375,17 +328,13 @@ class BoschHeatpump extends IPSModuleStrict
     }
 
     public function DHWOneTimeCharge(): void  { $this->SendMQTT('boiler', 'wWOneTime', '1'); }
-    public function SetHK1Mode(int $mode): void { $this->SetValue('T_HK1Betriebsart', $mode); $this->SendMQTT('thermostat', 'hc1mode', (string)$mode); }
-    public function SetHPMode(int $mode): void  { $this->SetValue('T_HK1WPModus', $mode);    $this->SendMQTT('thermostat', 'hc1hpmode', (string)$mode); }
-    public function SetDHWMode(int $mode): void  { $this->SetValue('T_WWKBetriebsart', $mode); $this->SendMQTT('thermostat', 'wwmode', (string)$mode); }
-    public function SetSilentMode(int $mode): void { $this->SetValue('B_Silentmodus', $mode);  $this->SendMQTT('boiler', 'silentMode', (string)$mode); }
-    public function SetFlowTemp(float $temp): void { $this->SetValue('B_VorlaufGewaehlt', $temp); $this->SendMQTT('boiler', 'selflowtemp', (string)$temp); }
-    public function SetDHWTemp(float $temp): void  { $this->SetValue('B_WWKGewaehltTemp', $temp); $this->SendMQTT('boiler', 'wWSelTemp', (string)$temp); }
+    public function SetHK1Mode(int $mode): void { $this->SetValue('T_HK1Betriebsart', $mode); $this->SendMQTT('thermostat', 'hc1mode', (string) $mode); }
+    public function SetHPMode(int $mode): void  { $this->SetValue('T_HK1WPModus', $mode); $this->SendMQTT('thermostat', 'hc1hpmode', (string) $mode); }
+    public function SetDHWMode(int $mode): void { $this->SetValue('T_WWKBetriebsart', $mode); $this->SendMQTT('thermostat', 'wwmode', (string) $mode); }
+    public function SetSilentMode(int $mode): void { $this->SetValue('B_Silentmodus', $mode); $this->SendMQTT('boiler', 'silentMode', (string) $mode); }
+    public function SetFlowTemp(float $temp): void { $this->SetValue('B_VorlaufGewaehlt', $temp); $this->SendMQTT('boiler', 'selflowtemp', (string) $temp); }
+    public function SetDHWTemp(float $temp): void  { $this->SetValue('B_WWKGewaehltTemp', $temp); $this->SendMQTT('boiler', 'wWSelTemp', (string) $temp); }
     public function SetAbsent(bool $v): void { $this->SetValue('T_Abwesend', $v); $this->SendMQTT('thermostat', 'absent', $v ? '1' : '0'); }
-
-    // =========================================================================
-    // Private methods
-    // =========================================================================
 
     private function ProcessData(array $payload, array $entities): void
     {
@@ -442,7 +391,6 @@ class BoschHeatpump extends IPSModuleStrict
             'QoS'     => 0,
             'Retain'  => false,
         ]));
-        $this->SendDebug(__FUNCTION__, $topic . ' => ' . $payload, 0);
     }
 
     private function CalculateCOP(): void
@@ -461,12 +409,12 @@ class BoschHeatpump extends IPSModuleStrict
 
     private function CreateAllVariables(array $entities, string $deviceName): void
     {
-        $deviceCatID = $this->EnsureCategory('DevCat' . md5($deviceName), $deviceName, $this->InstanceID);
-        $cats        = [];
+        $deviceCatID = $this->EnsureCategory($deviceName, $this->InstanceID);
+        $cats = [];
         foreach ($entities as $ident => $def) {
             $catName = $def[5] ?? 'Sonstiges';
             if (!isset($cats[$catName])) {
-                $cats[$catName] = $this->EnsureCategory('SubCat' . md5($deviceName . $catName), $catName, $deviceCatID);
+                $cats[$catName] = $this->EnsureCategory($catName, $deviceCatID);
             }
         }
         foreach ($entities as $ident => $def) {
@@ -486,15 +434,16 @@ class BoschHeatpump extends IPSModuleStrict
         }
     }
 
-    private function EnsureCategory(string $ident, string $name, int $parentID): int
+    private function EnsureCategory(string $name, int $parentID): int
     {
-        $id = @$this->GetIDForIdent($ident);
-        if (!$id) {
-            $id = IPS_CreateCategory();
-            IPS_SetName($id, $name);
-            IPS_SetParent($id, $parentID);
-            IPS_SetIdent($id, $ident);
+        foreach (IPS_GetChildrenIDs($parentID) as $id) {
+            if (IPS_GetObject($id)['ObjectType'] === 0 && IPS_GetName($id) === $name) {
+                return $id;
+            }
         }
+        $id = IPS_CreateCategory();
+        IPS_SetName($id, $name);
+        IPS_SetParent($id, $parentID);
         return $id;
     }
 
@@ -521,7 +470,7 @@ class BoschHeatpump extends IPSModuleStrict
         $fp('BHP.lmin',    VARIABLETYPE_FLOAT,   'Drops',       ' l/min', 0, 100,    0.1,  1);
         $fp('BHP.Kmin',    VARIABLETYPE_INTEGER, 'Clock',       ' Kmin',  0, 1000,   10,   0);
 
-        $ep = function(string $name, array $entries): void {
+        $ep = function (string $name, array $entries): void {
             if (!IPS_VariableProfileExists($name)) IPS_CreateVariableProfile($name, VARIABLETYPE_INTEGER);
             $existing = IPS_GetVariableProfile($name)['Associations'];
             foreach ($existing as $a) IPS_SetVariableProfileAssociation($name, $a['Value'], '', '', -1);
