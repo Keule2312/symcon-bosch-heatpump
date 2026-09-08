@@ -13,7 +13,7 @@
                     "name": "MQTTInstance",
                     "type": "SelectModule",
                     "caption": "MQTT Broker Instanz",
-                    "moduleID": "{F7A0DD2E-7687-4B45-B8B2-69B44F8A18E8}"
+                    "moduleID": "{F7A0DD2E-7684-95C0-64C2-D2A9DC47577B}"
                 },
                 {
                     "name": "TopicPrefix",
