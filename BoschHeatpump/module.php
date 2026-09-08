@@ -264,7 +264,7 @@ class BoschHeatpump extends IPSModuleStrict
     }
     public function GetCompatibleParents(): string
     {
-        return json_encode(['{82E1EEC2-2CD1-CB3D-2B22-B2851CCB6B02}']);
+        return json_encode(['{F7A0DD2E-7684-95C0-64C2-D2A9DC47577B}']);
     }
     /**
      * The content can be overwritten in order to transfer a self-created configuration page.
