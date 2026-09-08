@@ -6,66 +6,44 @@
             "expanded": true,
             "items": [
                 {
-                    "type": "Label",
-                    "caption": "Wähle die MQTT-Serverinstanz aus, über die EMS-ESP kommuniziert."
-                },
-                {
-                    "name": "MQTTInstance",
-                    "type": "SelectModule",
-                    "caption": "MQTT Broker Instanz",
-                    "moduleID": "{F7A0DD2E-7684-95C0-64C2-D2A9DC47577B}"
-                },
-                {
                     "name": "TopicPrefix",
                     "type": "ValidationTextBox",
-                    "caption": "Topic-Präfix (EMS-ESP Standard: 'ems-esp')",
-                    "validate": "^[a-zA-Z0-9_/-]+$"
+                    "caption": "Topic-Praefix (Standard: ems-esp)"
                 }
             ]
         },
         {
             "type": "ExpansionPanel",
-            "caption": "Geräte-Konfiguration",
+            "caption": "Geraete-Konfiguration",
             "expanded": true,
             "items": [
                 {
                     "name": "EnableBoiler",
                     "type": "CheckBox",
-                    "caption": "Kessel / Wärmepumpe aktivieren (Topic: boiler)"
+                    "caption": "Kessel und Waermepumpe aktivieren"
                 },
                 {
                     "name": "EnableThermostat",
                     "type": "CheckBox",
-                    "caption": "Thermostat / Bedienung aktivieren (Topic: thermostat)"
+                    "caption": "Thermostat aktivieren"
                 },
                 {
                     "name": "EnableEnergy",
                     "type": "CheckBox",
-                    "caption": "Energiedaten & COP-Berechnung aktivieren"
+                    "caption": "Energiedaten und COP aktivieren"
                 },
                 {
                     "name": "UpdateInterval",
                     "type": "NumberSpinner",
-                    "caption": "Polling-Intervall in Sekunden (0 = nur MQTT Push)",
+                    "caption": "Polling-Intervall in Sekunden",
                     "minimum": 0,
                     "maximum": 3600,
                     "suffix": " Sekunden"
-                }
-            ]
-        },
-        {
-            "type": "ExpansionPanel",
-            "caption": "WebFront Dashboard",
-            "expanded": false,
-            "items": [
+                },
                 {
                     "name": "EnableDashboard",
                     "type": "CheckBox",
-                    "caption": "WebFront Dashboard aktivieren (WebHook)"
-                },
-                {
-                    "type": "Label",
-                    "caption": "Das Dashboard ist erreichbar unter: http://<IPS-IP>:3777/hook/BoschHeatpump/<InstanzID>"
+                    "caption": "Dashboard aktivieren"
                 }
             ]
         }
@@ -73,18 +51,13 @@
     "actions": [
         {
             "type": "Button",
-            "caption": "✓ Variablen anlegen & Verbindung testen",
+            "caption": "Variablen anlegen",
             "onClick": "BHP_SetupVariables($id);"
         },
         {
             "type": "Button",
-            "caption": "↺ Daten jetzt abrufen",
+            "caption": "Daten abrufen",
             "onClick": "BHP_RequestUpdate($id);"
-        },
-        {
-            "type": "Button",
-            "caption": "🌡 WWK Einmalladung starten",
-            "onClick": "BHP_DHWOneTimeCharge($id);"
         }
     ]
 }
